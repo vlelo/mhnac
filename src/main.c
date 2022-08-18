@@ -1,27 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <nfc/nfc.h>
 
 #include "main.h"
-
-static void
-print_hex(const uint8_t *pbtData, const size_t szBytes)
-{
-  size_t  szPos;
-
-  for (szPos = 0; szPos < szBytes; szPos++) {
-    printf("%02x  ", pbtData[szPos]);
-  }
-  printf("\n");
-}
+#include "mifare.h"
+#include "keys.h"
 
 int main(int argc, char *argv[])
 {
   (void) argc;
-  (void) argv;
 
   char *desired_device = NULL;
+
+  const char *acLibnfcVersion = nfc_version();
+  printf(
+    MAG "%s" RESET " uses libnfc %s\n", argv[0], acLibnfcVersion);
 
   /* initialize libnfc */
   nfc_context *context;
@@ -42,7 +37,7 @@ int main(int argc, char *argv[])
   if (nfc_initiator_init(pnd) < 0) {
     __PANIC_NFC(EXIT_FAILURE, pnd);
   }
-  printf("NFC reader: %s opened succesfully\n",
+  printf("NFC reader: `%s` opened succesfully\n",
          nfc_device_get_name(pnd));
 
   /* establish contact with tag */
@@ -58,22 +53,24 @@ int main(int argc, char *argv[])
     __PANIC_NFC(EXIT_FAILURE, pnd);
   }
 
-	printf("The following (NFC) ISO14443A tag was found:\n");
-	printf("    ATQA (SENS_RES): ");
-	print_hex(nt.nti.nai.abtAtqa, 2);
-	printf("       UID (NFCID%c): ", (nt.nti.nai.abtUid[0] == 0x08 ? '3' : '1'));
-	print_hex(nt.nti.nai.abtUid, nt.nti.nai.szUidLen);
-	printf("      SAK (SEL_RES): ");
-	print_hex(&nt.nti.nai.btSak, 1);
-	if (nt.nti.nai.szAtsLen) {
-		printf("          ATS (ATR): ");
-		print_hex(nt.nti.nai.abtAts, nt.nti.nai.szAtsLen);
-	}
+	print_tag_info(nt);
 
-	/* close device */
+	mifare_param param;
+	struct mifare_param_auth key = {
+		.abtKey = common_keys[0][0],
+		.abtAuthUid = *nt.nti.nai.abtUid,
+	};
+	param.mpa = key;
+
+	if (!nfc_initiator_mifare_cmd(pnd, MC_AUTH_A, 62, &param)) {
+		__PANIC(EXIT_FAILURE, "Could not authenticate", NULL);
+	}
+	__WARN("Authenticated succesfully", NULL)
+
+  /* close device */
   nfc_close(pnd);
   /* close libnfc */
   nfc_exit(context);
 
-  return 0;
+	exit(EXIT_SUCCESS);
 }
