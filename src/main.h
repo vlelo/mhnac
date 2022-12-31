@@ -31,12 +31,18 @@
 
 #define __FREE_ALL                                                                       \
   {                                                                                      \
-    if (g_state.context)                                                                 \
-      nfc_exit(g_state.context);                                                         \
-    if (g_state.pnd)                                                                     \
-      nfc_close(g_state.pnd);                                                            \
+			if (G_state.context)                                                               \
+				nfc_exit(G_state.context);                                                       \
+			if (G_state.pnd)                                                                   \
+				nfc_close(G_state.pnd);                                                          \
   }
-
+#define __FREE_ALL_ptr                                                                   \
+	{                                                                                      \
+			if (G_state->context)                                                              \
+				nfc_exit(G_state->context);                                                      \
+			if (G_state->pnd)                                                                  \
+				nfc_close(G_state->pnd);                                                         \
+	}
 #ifndef DEBUG
 #define __ERROR(msg, ...)                                                                \
   {                                                                                      \
@@ -90,9 +96,19 @@
     __FREE_ALL;                                                                          \
     exit(err);                                                                           \
   }
+#define __PANIC_ptr(err, msg, ...)                                                       \
+  {                                                                                      \
+    __ERROR(msg, __VA_ARGS__);                                                           \
+    __FREE_ALL_ptr;                                                                      \
+    exit(err);                                                                           \
+  }
 #define __PANIC_NFC(err, pnd)                                                            \
   {                                                                                      \
     __PANIC(err, "%s", nfc_strerror(pnd));                                               \
+  }
+#define __PANIC_NFC_ptr(err, pnd)                                                        \
+  {                                                                                      \
+    __PANIC_ptr(err, "%s", nfc_strerror(pnd));                                           \
   }
 
 #define __mf_anticollision(nt, pnd)                                                      \
@@ -113,11 +129,14 @@ static const nfc_modulation nmMifare = {
   .nbr = NBR_106,
 };
 
+typedef struct g_state {
+	nfc_context *context;
+	nfc_device *pnd;
+	nfc_target nt;
+} g_state_t;
+
 //------------------------------------------------------------------//
 //                      Function declarations                       //
 //------------------------------------------------------------------//
-
-void
-print_tag_info(nfc_target nt);
 
 #endif // _MAIN_H_
