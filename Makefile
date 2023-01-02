@@ -3,7 +3,7 @@ TARGET := mhnac
 CC := cc
 PKG_CONFIG = pkg-config
 
-PACKAGES := libnfc
+PACKAGES := libnfc libfreefare
 
 CFLAGS := -Wall -Wextra -std=c11 -pedantic
 
