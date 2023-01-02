@@ -17,7 +17,7 @@ static const struct option longopts[] = {
 
 // static const char *optstring = "abc:d:012";
 
-static const char *optstring = "hJ:R:Do:d:k:";
+static const char *optstring = "hJ:R:DCo:d:k:";
 
 static const int *longindex = NULL;
 
