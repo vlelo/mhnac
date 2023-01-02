@@ -35,6 +35,7 @@ static const char *help_text =
   "\n"
 "      --key-data,    -k <key>          Use <key> as A key for the credit sector. Only mandatory for --dump,\n"
 "                                       otherwise will try to use the one on the injected sectors"
+	"\n"
 "      --key-mistery, -k <key>          Use <key> as A key for the mistery sector. Only mandatory for --dump,\n"
 "                                       otherwise will try to use the one on the injected sectors"
   "\n"
