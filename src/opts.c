@@ -1,4 +1,6 @@
 #include <getopt.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "help.h"
@@ -23,11 +25,12 @@ static const struct option longopts[] = {
 
 // static const char *optstring = "abc:d:012";
 
-static const char *optstring = "hJ:TR:DCo:d:k:m:n:";
+static const char *optstring = ":hJ:TR:DCo:d:k:m:n:";
 
 void
 parse_user_flags(const int argc, char *const argv[], g_opts_t *const G_opts)
 {
+	opterr = 0; // don't use default getopt errors
   int c;
   while ((c = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
     switch (c) {
@@ -89,7 +92,16 @@ parse_user_flags(const int argc, char *const argv[], g_opts_t *const G_opts)
       }
       hex2bin(G_opts->null_key, optarg, KEY_SIZE);
       break;
+		case '?': // unknown option
+			__ERROR("invalid option " BOLD "`%s`" RESET, argv[optind - 1]);
+			exit(EXIT_FAILURE);
+			break;
+		case ':': // missing option argument
+			__ERROR("option " BOLD "`%s`" RESET " requires an argument", argv[optind - 1]);
+			exit(EXIT_FAILURE);
+			break;
     default:
+		fprintf(stderr, "Ambiguous option? %s -%c", argv[optind -1], optopt);
       exit(EXIT_FAILURE);
     };
   };
