@@ -58,10 +58,7 @@ void
 hex2bin(uint8_t *const dest, const char *hex, const size_t szBytes);
 
 void
-print_hex(const uint8_t *pbtData, const size_t szBytes);
-
-void
-print_hex_bits(const uint8_t *pbtData, const size_t szBits);
+bin2hex(char *const dest, const uint8_t *const bin, const size_t szBytes);
 
 void
 inject_block(g_state_t *G_state, g_opts_t *G_opts);

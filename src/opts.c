@@ -27,8 +27,15 @@ static const struct option longopts[] = {
 
 static const char *optstring = ":hJ:TR:DCo:d:k:m:n:";
 
+/**
+ * @brief Sets the global program options by parsing user arguments
+ *
+ * @param `argc` 
+ * @param `argv`
+ * @param `G_opts`
+ */
 void
-parse_user_flags(const int argc, char *const argv[], g_opts_t *const G_opts)
+parse_user_flags(const int argc, char *const argv[], g_opts_t *const restrict G_opts)
 {
 	opterr = 0; // don't use default getopt errors
   int c;

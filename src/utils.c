@@ -7,6 +7,16 @@
 #include "main.h"
 #include "utils.h"
 
+/**
+ * @brief Writes in `&dest` `szBytes` bytes of binary data, given by the hexadecimal
+ *rapresentatoin of `hex`
+ *
+ * @param `dest` Pointer to the destination buffer
+ * @param `hex` String containing an hexadecimal formatted bytes.
+ *						- Must be composed of multiples of two characters.
+ *						- There must be no leading `0x`
+ * @param `szBytes` Number of bytes to consider (two characters in hex)
+ */
 void
 hex2bin(uint8_t *const dest, const char *hex, const size_t szBytes)
 {
@@ -16,41 +26,32 @@ hex2bin(uint8_t *const dest, const char *hex, const size_t szBytes)
   }
 }
 
+/**
+ * @brief Writes in `&dest` the hexadecimal rapresentation of the first `szBytes` bytes
+ *of `bin`
+ *
+ * @param `dest` Pointer to the destination buffer. Must also have one extra byte for the 
+ *null terminator
+ * @param `bin` Buffer containing the binary data
+ * @param `szBytes` Number of bytes to consider
+ */
 void
-print_hex(const uint8_t *pbtData, const size_t szBytes)
+bin2hex(char *const dest, const uint8_t *const bin, const size_t szBytes)
 {
-  size_t szPos;
-
-  for (szPos = 0; szPos < szBytes; szPos++) {
-    printf("%02x  ", pbtData[szPos]);
+  for (register size_t count = 0; count < szBytes; count++) {
+    sprintf(&dest[2*count], "%02hhX", bin[count]);
   }
-  printf("\n");
+	dest[szBytes*2] = '\0';
 }
 
+/**
+ * @brief Injects the dump file blocks into free sectors of the card
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
 void
-print_hex_bits(const uint8_t *pbtData, const size_t szBits)
-{
-  uint8_t uRemainder;
-  size_t szPos;
-  size_t szBytes = szBits / 8;
-
-  for (szPos = 0; szPos < szBytes; szPos++) {
-    printf("%02x  ", pbtData[szPos]);
-  }
-
-  uRemainder = szBits % 8;
-  // Print the rest bits
-  if (uRemainder != 0) {
-    if (uRemainder < 5)
-      printf("%01x (%d bits)", pbtData[szBytes], uRemainder);
-    else
-      printf("%02x (%d bits)", pbtData[szBytes], uRemainder);
-  }
-  printf("\n");
-}
-
-void
-inject_block(g_state_t *G_state, g_opts_t *G_opts)
+inject_block(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   dump_t dump;
 
@@ -70,8 +71,14 @@ inject_block(g_state_t *G_state, g_opts_t *G_opts)
   WRITE(G_state->tag, INJECT_STRIDE + 2 * NEXT + 1, dump.data.ordered.mistery[3]);
 }
 
+/**
+ * @brief Transfers data from injected blocks into value blocks
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
 void
-transfer_credit(g_state_t *G_state, g_opts_t *G_opts)
+transfer_credit(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   set_keys_if_unset(G_state, G_opts);
 
@@ -89,16 +96,28 @@ transfer_credit(g_state_t *G_state, g_opts_t *G_opts)
   }
 }
 
+/**
+ * @brief Performs `inject_block`, `transfer_credit` and `cean_card` in order
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
 void
-recharge_card(g_state_t *G_state, g_opts_t *G_opts)
+recharge_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   inject_block(G_state, G_opts);
   transfer_credit(G_state, G_opts);
   clean_card(G_state, G_opts);
 }
 
+/**
+ * @brief Dumps the value blocks of the card
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
 void
-dump_card(g_state_t *G_state, g_opts_t *G_opts)
+dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   dump_t dump;
   for (register size_t i = 0; i < 3; i++) {
@@ -121,8 +140,14 @@ dump_card(g_state_t *G_state, g_opts_t *G_opts)
   WRITE_DUMP(&dump, G_opts->output_loc);
 }
 
+/**
+ * @brief Sets to 0 all injected blocks
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
 void
-clean_card(g_state_t *G_state, g_opts_t *G_opts)
+clean_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   MifareClassicBlock zero = {0};
 
@@ -136,8 +161,14 @@ clean_card(g_state_t *G_state, g_opts_t *G_opts)
   RESTORE(G_state->tag, INJECT_STRIDE);
 }
 
+/**
+ * @brief If keys are not provided by the user, they are retrieved from the injected blocks
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
 void
-set_keys_if_unset(g_state_t *G_state, g_opts_t *G_opts)
+set_keys_if_unset(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   MifareClassicBlock buf;
 

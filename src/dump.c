@@ -3,8 +3,17 @@
 
 #include "dump.h"
 
+/**
+ * @brief Write dump object to file
+ *
+ * @param `dump` Dump object to be written
+ * @param `fname` File path
+ * @return Status of the operation:
+ *					- 0 success
+ *					- \-1 IO error
+ */
 int
-write_dump(dump_t *dump, char *fname)
+write_dump(dump_t *const restrict dump, const char *const restrict fname)
 {
   FILE *f;
 
@@ -22,8 +31,18 @@ write_dump(dump_t *dump, char *fname)
   return 0;
 }
 
+/**
+ * @brief Read a dump object from a file
+ *
+ * @param dump Buffer to store the dump object
+ * @param fname File path
+ * @return Status of the operation:
+ *						- 0 success
+ *						- \-1 IO error
+ *						- \-2 invalid file
+ */
 int
-read_dump(dump_t *const dump, const char *const fname)
+read_dump(dump_t *const restrict dump, const char *const restrict fname)
 {
   FILE *f;
 

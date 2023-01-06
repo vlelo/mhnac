@@ -79,7 +79,7 @@ typedef struct dump {
 //------------------------------------------------------------------//
 
 int
-write_dump(dump_t *dump, char *fname);
+write_dump(dump_t *const dump, const char *const fname);
 
 int
 read_dump(dump_t *const dump, const char *const fname);
