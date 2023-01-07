@@ -54,7 +54,7 @@ read_dump(dump_t *const restrict dump, const char *const restrict fname)
   }
   rewind(f);
 
-  if (fread(dump, sizeof(dump_t), 1, f) != DUMP_SIZE) {
+  if (fread(dump, 1, sizeof(dump_t), f) != DUMP_SIZE) {
     fclose(f);
     return -1;
   }

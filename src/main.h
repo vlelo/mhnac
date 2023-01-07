@@ -41,6 +41,8 @@
       free(G_opts.input_loc);                                                            \
     if (G_opts.output_loc)                                                               \
       free(G_opts.output_loc);                                                           \
+    if (G_opts.keys)                                                                     \
+      free(G_opts.keys);                                                                 \
   }
 #define __FREE_ALL_ptr                                                                   \
   {                                                                                      \
@@ -56,6 +58,8 @@
       free(G_opts->input_loc);                                                           \
     if (G_opts->output_loc)                                                              \
       free(G_opts->output_loc);                                                          \
+    if (G_opts->keys)                                                                    \
+      free(G_opts->keys);                                                                \
   }
 #ifndef DEBUG
 #define __ERROR(msg, ...)                                                                \
@@ -144,6 +148,7 @@
   }
 
 #define KEY_SIZE 6
+#define KEY_SIZE_CHAR 12
 
 //------------------------------------------------------------------//
 //                              Types                               //

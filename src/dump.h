@@ -21,7 +21,7 @@
   }
 #define FOPENW(f, file)                                                                  \
   {                                                                                      \
-    if ((f = fopen((file), "Wx")) == NULL) {                                             \
+    if ((f = fopen((file), "wx")) == NULL) {                                             \
       return -1;                                                                         \
     }                                                                                    \
   }

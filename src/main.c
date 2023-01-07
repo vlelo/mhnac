@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +44,16 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
   parse_user_flags(argc, argv, &G_opts);
+  if (G_opts.key_file_opts.input_loc) {
+    keys_from_file(&G_opts);
+  }
+
+  char buffer[13];
+  for (register size_t i = 0; i < G_opts.n_keys; i++) {
+    bin2hex(buffer, G_opts.keys[i], KEY_SIZE);
+    printf("[%ld] 0x%s\n", i, buffer);
+  }
+  exit(EXIT_SUCCESS);
 
   nfc_init(&G_state.context);
   if (G_state.context == NULL) {
