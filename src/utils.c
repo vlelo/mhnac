@@ -80,7 +80,7 @@ inject_block(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 void
 transfer_credit(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  set_keys_if_unset(G_state, G_opts);
+  retreive_keys(G_state, G_opts);
 
   for (register size_t i = 0; i < 3; i++) {
     AUTH(G_state->tag, i + INJECT_STRIDE, G_opts->null_key, MFC_KEY_A);
@@ -168,7 +168,7 @@ clean_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
  * @param `G_opts`
  */
 void
-set_keys_if_unset(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
+retreive_keys(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   MifareClassicBlock buf;
 

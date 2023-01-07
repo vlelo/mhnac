@@ -76,6 +76,6 @@ void
 clean_card(g_state_t *G_state, g_opts_t *G_opts);
 
 void
-set_keys_if_unset(g_state_t *G_state, g_opts_t *G_opts);
+retreive_keys(g_state_t *G_state, g_opts_t *G_opts);
 
 #endif /* !_UTILS_H_ */

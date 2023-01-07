@@ -111,6 +111,11 @@ main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
 }
 
+/**
+ * @brief Handler for unix signal
+ *
+ * @param `signum` Signal number
+ */
 static void
 sigHandler(const int signum)
 {
@@ -118,6 +123,12 @@ sigHandler(const int signum)
   __PANIC(EXIT_FAILURE, "Exiting: signal " RED "(%s)" RESET, sig(signum));
 }
 
+/**
+ * @brief Convert signal number `signum` to known signal string
+ *
+ * @param `signum` Signal number
+ * @return Literal string of the signal name
+ */
 __inline__ char *
 sig(const int signum)
 {
