@@ -19,10 +19,24 @@
 #define KEY_STRIDE    60
 #define READ_AMOUNT   8
 
-#define AUTH(tag, block, key, type)                                                      \
+// #define AUTH(tag, block, key, type)                                                      \
+//   {                                                                                      \
+//     if (mifare_classic_authenticate((tag), (block), (key), (type)) < 0) {                \
+//       __PANIC_FF_ptr(EXIT_FAILURE, (tag));                                               \
+//     }                                                                                    \
+//   }
+// #define AUTH(tag, block, type)                                                           \
+//   {                                                                                      \
+//     for (register size_t i = 0; i < G_opts->n_keys; i++) {                               \
+//       if (mifare_classic_authenticate((tag), (block), G_opts->keys[i], (type)) == 0) {   \
+//         break;                                                                           \
+//       }                                                                                  \
+//     }                                                                                    \
+//   }
+#define _AUTH(G_opts, tag, block, key_type)                                              \
   {                                                                                      \
-    if (mifare_classic_authenticate((tag), (block), (key), (type)) < 0) {                \
-      __PANIC_FF_ptr(EXIT_FAILURE, (tag));                                               \
+    if (AUTH((G_opts), (tag), (block), (key_type)) < 0) {                                \
+      __PANIC_ptr(EXIT_FAILURE, "Could not authenticate to tag with any key", NULL)      \
     }                                                                                    \
   }
 #define READ(tag, block, buf)                                                            \
