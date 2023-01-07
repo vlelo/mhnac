@@ -1,6 +1,6 @@
 # MHNAC
 
 ### Requirements
-    - `pkg-config`
-    - `libnfc`
-    - `libfreefare`
+  - `pkg-config`
+  - `libnfc`
+  - `libfreefare`
