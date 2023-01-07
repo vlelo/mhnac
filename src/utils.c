@@ -1,51 +1,219 @@
-#include "utils.h"
-#include "keys.h"
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "dump.h"
+#include "freefare.h"
 #include "main.h"
-#include "nfc-utils.h"
-#include "nfc/nfc-types.h"
+#include "utils.h"
+
+__inline__ int
+AUTH(const g_opts_t *const restrict G_opts,
+     const MifareTag tag,
+     const MifareClassicBlockNumber block,
+     const MifareClassicKeyType key_type);
 
 /**
- * @brief Utility function to print information on read tag
+ * @brief Writes in `&dest` `szBytes` bytes of binary data, given by the hexadecimal
+ *rapresentatoin of `hex`
  *
- * @param G_state <g_state_t> the target tag
- * @return nil
+ * @param `dest` Pointer to the destination buffer
+ * @param `hex` String containing an hexadecimal formatted bytes.
+ *						- Must be composed of multiples of two characters.
+ *						- There must be no leading `0x`
+ * @param `szBytes` Number of bytes to consider (two characters in hex)
  */
 void
-print_tag_info(g_state_t *G_state)
+hex2bin(uint8_t *const dest, const char *hex, const size_t szBytes)
 {
-	nfc_target nt = G_state->nt;
-  printf("The following (NFC) ISO14443A tag was found:\n");
-  printf("    ATQA (SENS_RES): ");
-  print_hex(nt.nti.nai.abtAtqa, 2);
-  printf("      UID (NFCID%c): ", (nt.nti.nai.abtUid[0] == 0x08 ? '3' : '1'));
-  print_hex(nt.nti.nai.abtUid, nt.nti.nai.szUidLen);
-  printf("      SAK (SEL_RES): ");
-  print_hex(&nt.nti.nai.btSak, 1);
-  if (nt.nti.nai.szAtsLen) {
-    printf("          ATS (ATR): ");
-    print_hex(nt.nti.nai.abtAts, nt.nti.nai.szAtsLen);
+  for (register size_t count = 0; count < szBytes; count++) {
+    sscanf(hex, "%2hhx", &dest[count]);
+    hex += 2;
   }
 }
 
+/**
+ * @brief Writes in `&dest` the hexadecimal rapresentation of the first `szBytes` bytes
+ *of `bin`
+ *
+ * @param `dest` Pointer to the destination buffer. Must also have one extra byte for the
+ *null terminator
+ * @param `bin` Buffer containing the binary data
+ * @param `szBytes` Number of bytes to consider
+ */
 void
-inject_block(g_state_t *G_state)
+bin2hex(char *const dest, const uint8_t *const bin, const size_t szBytes)
 {
-  mifare_param param;
-  struct mifare_param_auth key;
-  memcpy(key.abtKey, common_keys[0], sizeof(key.abtKey));
-  memcpy(key.abtAuthUid, G_state->nt.nti.nai.abtUid, sizeof(key.abtAuthUid));
-  param.mpa = key;
-
-  if (!nfc_initiator_mifare_cmd(G_state->pnd, MC_AUTH_A, 62, &param)) {
-    __PANIC_ptr(EXIT_FAILURE, "Could not authenticate", NULL);
+  for (register size_t count = 0; count < szBytes; count++) {
+    sprintf(&dest[2 * count], "%02hhX", bin[count]);
   }
-  __WARN("Authenticated succesfully", NULL)
-
-	__PANIC_ptr(EXIT_FAILURE, "Not implemented", NULL);
+  dest[szBytes * 2] = '\0';
 }
 
+/**
+ * @brief Injects the dump file blocks into free sectors of the card
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
 void
-recharge_card(g_state_t *G_state)
+inject_block(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-	__PANIC_ptr(EXIT_FAILURE, "Not implemented", NULL);
+  dump_t dump;
+
+  READ_DUMP(&dump, G_opts->input_loc);
+
+  for (register size_t i = 0; i < 3; i++) {
+    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
+    WRITE(G_state->tag, i + INJECT_STRIDE, dump.data.ordered.data[i]);
+  }
+  for (register size_t i = 0; i < 3; i++) {
+    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE + NEXT, MFC_KEY_A);
+    WRITE(G_state->tag, i + INJECT_STRIDE + NEXT, dump.data.ordered.mistery[i]);
+  }
+  _AUTH(G_opts, G_state->tag, INJECT_STRIDE + 2 * NEXT, MFC_KEY_A);
+  WRITE(G_state->tag, INJECT_STRIDE + 2 * NEXT, dump.data.ordered.data[3]);
+  _AUTH(G_opts, G_state->tag, INJECT_STRIDE + 2 * NEXT + 1, MFC_KEY_A);
+  WRITE(G_state->tag, INJECT_STRIDE + 2 * NEXT + 1, dump.data.ordered.mistery[3]);
+}
+
+/**
+ * @brief Transfers data from injected blocks into value blocks
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
+void
+transfer_credit(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
+{
+  retreive_keys(G_state, G_opts);
+
+  for (register size_t i = 0; i < 3; i++) {
+    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
+    RESTORE(G_state->tag, i + INJECT_STRIDE);
+    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE, MFC_KEY_A);
+    TRANSFER(G_state->tag, i + CREDIT_STRIDE);
+  }
+  for (register size_t i = 0; i < 3; i++) {
+    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE + NEXT, MFC_KEY_A);
+    RESTORE(G_state->tag, i + INJECT_STRIDE + NEXT);
+    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE + NEXT, MFC_KEY_A);
+    TRANSFER(G_state->tag, i + CREDIT_STRIDE + NEXT);
+  }
+}
+
+/**
+ * @brief Performs `inject_block`, `transfer_credit` and `cean_card` in order
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
+void
+recharge_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
+{
+  inject_block(G_state, G_opts);
+  transfer_credit(G_state, G_opts);
+  clean_card(G_state, G_opts);
+}
+
+/**
+ * @brief Dumps the value blocks of the card
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
+void
+dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
+{
+  dump_t dump;
+  for (register size_t i = 0; i < 3; i++) {
+    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE, MFC_KEY_A);
+    READ(G_state->tag, i + CREDIT_STRIDE, &dump.data.ordered.data[i]);
+  }
+  for (register size_t i = 0; i < 3; i++) {
+    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE + NEXT, MFC_KEY_A);
+    READ(G_state->tag, i + CREDIT_STRIDE + NEXT, &dump.data.ordered.mistery[i]);
+  }
+
+  if (G_opts->output_loc == NULL) {
+    G_opts->output_loc = malloc(sizeof(char) * (4 * 2 + 4)); // 4*2 = uid hex + 4 ".bin"
+    strcpy(G_opts->output_loc, freefare_get_tag_uid(G_state->tag));
+    strcat(G_opts->output_loc, ".bin");
+  }
+
+  hex2bin(dump.uid, freefare_get_tag_uid(G_state->tag), sizeof(dump.uid));
+
+  WRITE_DUMP(&dump, G_opts->output_loc);
+}
+
+/**
+ * @brief Sets to 0 all injected blocks
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
+void
+clean_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
+{
+  MifareClassicBlock zero = {0};
+
+  for (register size_t i = 0; i < 12; i++) {
+    if (!i % 3) {
+      continue;
+    }
+    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
+    WRITE(G_state->tag, i + INJECT_STRIDE, zero);
+  }
+  RESTORE(G_state->tag, INJECT_STRIDE);
+}
+
+/**
+ * @brief If keys are not provided by the user, they are retrieved from the injected
+ * blocks
+ *
+ * @param `G_state`
+ * @param `G_opts`
+ */
+void
+retreive_keys(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
+{
+  MifareClassicBlock buf;
+
+  _AUTH(G_opts, G_state->tag, KEY_STRIDE, MFC_KEY_A);
+  READ(G_state->tag, KEY_STRIDE, &buf);
+  G_opts->n_keys++;
+  G_opts->keys = (MifareClassicKey *) realloc(
+    G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
+  memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
+
+  _AUTH(G_opts, G_state->tag, KEY_STRIDE + 1, MFC_KEY_A);
+  READ(G_state->tag, KEY_STRIDE + 1, &buf);
+  G_opts->keys = (MifareClassicKey *) realloc(
+    G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
+  memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
+}
+
+/**
+ * @brief Automatically authenticates to the card by cycling through the list of keys
+ *
+ * @param `G_opts`
+ * @param `tag` Tag to authenticate to
+ * @param `block` Block to authenticate to
+ * @param `key_type` Key type
+ * @return Status:
+ *					- 0 on success
+ *					- \-1 on failure
+ */
+__inline__ int
+AUTH(const g_opts_t *const restrict G_opts,
+     const MifareTag tag,
+     const MifareClassicBlockNumber block,
+     const MifareClassicKeyType key_type)
+{
+  for (register size_t i = 0; i < G_opts->n_keys; i++) {
+    if (mifare_classic_authenticate(tag, block, G_opts->keys[i], key_type) == 0) {
+      return 0;
+    }
+  }
+  return -1;
 }

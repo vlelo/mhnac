@@ -4,10 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <freefare.h>
 #include <nfc/nfc.h>
-#include <sys/cdefs.h>
-
-#include "nfc-utils.h"
 
 //------------------------------------------------------------------//
 //                              Macros                              //
@@ -25,24 +23,44 @@
 #define WHT   "\x1B[37m"
 #define RESET "\x1B[0m"
 
-#define BOLD  "\x1B[1m"
-#define ITAL  "\x1B[3m"
-#define UNDE  "\x1B[4m"
+#define BOLD "\x1B[1m"
+#define ITAL "\x1B[3m"
+#define UNDE "\x1B[4m"
 
 #define __FREE_ALL                                                                       \
   {                                                                                      \
-			if (G_state.context)                                                               \
-				nfc_exit(G_state.context);                                                       \
-			if (G_state.pnd)                                                                   \
-				nfc_close(G_state.pnd);                                                          \
+    if (G_state.context)                                                                 \
+      nfc_exit(G_state.context);                                                         \
+    if (G_state.pnd)                                                                     \
+      nfc_close(G_state.pnd);                                                            \
+    if (G_state.tags)                                                                    \
+      freefare_free_tags(G_state.tags);                                                  \
+    if (G_opts.desired_device)                                                           \
+      free(G_opts.desired_device);                                                       \
+    if (G_opts.input_loc)                                                                \
+      free(G_opts.input_loc);                                                            \
+    if (G_opts.output_loc)                                                               \
+      free(G_opts.output_loc);                                                           \
+    if (G_opts.keys)                                                                     \
+      free(G_opts.keys);                                                                 \
   }
 #define __FREE_ALL_ptr                                                                   \
-	{                                                                                      \
-			if (G_state->context)                                                              \
-				nfc_exit(G_state->context);                                                      \
-			if (G_state->pnd)                                                                  \
-				nfc_close(G_state->pnd);                                                         \
-	}
+  {                                                                                      \
+    if (G_state->context)                                                                \
+      nfc_exit(G_state->context);                                                        \
+    if (G_state->pnd)                                                                    \
+      nfc_close(G_state->pnd);                                                           \
+    if (G_state->tags)                                                                   \
+      freefare_free_tags(G_state->tags);                                                 \
+    if (G_opts->desired_device)                                                          \
+      free(G_opts->desired_device);                                                      \
+    if (G_opts->input_loc)                                                               \
+      free(G_opts->input_loc);                                                           \
+    if (G_opts->output_loc)                                                              \
+      free(G_opts->output_loc);                                                          \
+    if (G_opts->keys)                                                                    \
+      free(G_opts->keys);                                                                \
+  }
 #ifndef DEBUG
 #define __ERROR(msg, ...)                                                                \
   {                                                                                      \
@@ -53,6 +71,8 @@
     fprintf(stderr, YEL "WARNING: " RESET msg "\n", __VA_ARGS__);                        \
   }
 #
+#define __dprint(msg, ...)
+#define __dlprint(msg, ...)
 #define __inline__ static inline
 #
 #else
@@ -92,7 +112,7 @@
 
 #define __PANIC(err, msg, ...)                                                           \
   {                                                                                      \
-    __ERROR(msg, __VA_ARGS__);                                                            \
+    __ERROR(msg, __VA_ARGS__);                                                           \
     __FREE_ALL;                                                                          \
     exit(err);                                                                           \
   }
@@ -110,6 +130,14 @@
   {                                                                                      \
     __PANIC_ptr(err, "%s", nfc_strerror(pnd));                                           \
   }
+#define __PANIC_FF(err, pnd)                                                             \
+  {                                                                                      \
+    __PANIC(err, "%s", freefare_strerror(pnd));                                          \
+  }
+#define __PANIC_FF_ptr(err, pnd)                                                         \
+  {                                                                                      \
+    __PANIC_ptr(err, "%s", freefare_strerror(pnd));                                      \
+  }
 
 #define __mf_anticollision(nt, pnd)                                                      \
   {                                                                                      \
@@ -119,24 +147,18 @@
     }                                                                                    \
   }
 
-//------------------------------------------------------------------//
-//                         Global constants                         //
-//------------------------------------------------------------------//
+#define KEY_SIZE 6
+#define KEY_SIZE_CHAR 12
 
-/* poll for ISO14443A (MIFARE CLASSIC tag) */
-static const nfc_modulation nmMifare = {
-  .nmt = NMT_ISO14443A,
-  .nbr = NBR_106,
-};
+//------------------------------------------------------------------//
+//                              Types                               //
+//------------------------------------------------------------------//
 
 typedef struct g_state {
-	nfc_context *context;
-	nfc_device *pnd;
-	nfc_target nt;
+  nfc_context *context;
+  nfc_device *pnd;
+  MifareTag tag;
+  MifareTag *tags;
 } g_state_t;
-
-//------------------------------------------------------------------//
-//                      Function declarations                       //
-//------------------------------------------------------------------//
 
 #endif // _MAIN_H_
