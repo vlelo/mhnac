@@ -47,6 +47,10 @@ main(int argc, char *argv[])
   if (G_opts.key_file_opts.input_loc) {
     keys_from_file(&G_opts);
   }
+	G_opts.n_keys += 2;
+	G_opts.keys = (MifareClassicKey *) realloc(G_opts.keys, (sizeof(MifareClassicKey) * G_opts.n_keys));
+	memset(G_opts.keys[G_opts.n_keys - 2], 0x00, KEY_SIZE);
+	memset(G_opts.keys[G_opts.n_keys - 1], 0xFF, KEY_SIZE);
 
   char buffer[13];
   for (register size_t i = 0; i < G_opts.n_keys; i++) {
