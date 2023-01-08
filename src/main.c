@@ -19,20 +19,7 @@
 
 static g_state_t G_state = {0};
 
-static g_opts_t G_opts = {
-  .desired_device = NULL,
-  .output_loc = NULL,
-  .input_loc = NULL,
-  .keys = NULL,
-  .key_file_opts =
-    {
-                    .input_loc = NULL,
-                    .bin = false,
-                    },
-  .n_keys = 0,
-  .number_of_sectors = 4,
-  .fun = NULL,
-};
+static g_opts_t G_opts = {0};
 
 //------------------------------------------------------------------//
 //                      Function declarations                       //
@@ -43,6 +30,9 @@ sigHandler(int signum);
 
 __inline__ char *
 sig(int signum);
+
+__inline__ char *
+cmd(void (*fun)(g_state_t *G_state, g_opts_t *G_opts));
 
 //------------------------------------------------------------------//
 //                               main                               //
@@ -56,21 +46,34 @@ main(int argc, char *argv[])
     __PRINT_HELP;
     exit(EXIT_FAILURE);
   }
-  parse_user_flags(argc, argv, &G_opts);
-  if (G_opts.fun == print_dump) {
-    print_dump(&G_state, &G_opts);
-    FREE_OPTS
-    exit(EXIT_SUCCESS);
-  }
 
-  if (G_opts.key_file_opts.input_loc) {
-    keys_from_file(&G_opts);
-  }
-  G_opts.n_keys += 2;
-  G_opts.keys =
-    (MifareClassicKey *) realloc(G_opts.keys, (sizeof(MifareClassicKey) * G_opts.n_keys));
-  memset(G_opts.keys[G_opts.n_keys - 2], 0x00, KEY_SIZE);
-  memset(G_opts.keys[G_opts.n_keys - 1], 0xFF, KEY_SIZE);
+	{ /* manage user input */
+		parse_user_flags(argc, argv, &G_opts);
+		if (G_opts.fun == print_dump) {
+			print_dump(&G_state, &G_opts);
+			FREE_OPTS
+			exit(EXIT_SUCCESS);
+		}
+
+		if (G_opts.number_of_sectors != 0) {
+			if (G_opts.fun == inject_dump || G_opts.fun == recharge_card || G_opts.fun == print_dump) {
+				__WARN("Flag --n-sectors set with ann incompatible command: " F_STR, cmd(G_opts.fun));
+			}
+		} else {
+			G_opts.number_of_sectors = 4;
+		}
+
+		if (G_opts.key_file_opts.input_loc) {
+			keys_from_file(&G_opts);
+		} else if (G_opts.key_file_opts.bin) {
+			__WARN("Flag -b set wihtout --key-file", NULL);
+		}
+		G_opts.n_keys += 2;
+		G_opts.keys =
+			(MifareClassicKey *) realloc(G_opts.keys, (sizeof(MifareClassicKey) * G_opts.n_keys));
+		memset(G_opts.keys[G_opts.n_keys - 2], 0x00, KEY_SIZE);
+		memset(G_opts.keys[G_opts.n_keys - 1], 0xFF, KEY_SIZE);
+	}
 
   nfc_init(&G_state.context);
   if (G_state.context == NULL) {
@@ -178,5 +181,29 @@ sig(const int signum)
   if (signum == 15) {
     return "SIGTERM";
   }
+  return "UNKNOWN";
+}
+
+__inline__ char *
+cmd(void (*fun)(g_state_t *G_state, g_opts_t *G_opts))
+{
+	if (fun == inject_dump) {
+		return "inject";
+	}
+	if (fun == transfer_credit) {
+		return "transfer";
+	}
+	if (fun == recharge_card) {
+		return "recharge";
+	}
+	if (fun == dump_card) {
+		return "dump";
+	}
+	if (fun == clean_card) {
+		return "clean";
+	}
+	if (fun == print_dump) {
+		return "print";
+	}
   return "UNKNOWN";
 }
