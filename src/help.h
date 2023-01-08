@@ -40,7 +40,7 @@ static const char *help_text =
 "                                       mhnac will automatically fetch keys for all operations that aren't --dump\n"
 	"\n"
 "      --key-file,    -f <file>         Add keys to the key list ot the program, reading form <file>\n"
-"                                       <file> is a newline ('\n') separated list of keys, unless the -b flag is given\n"
+"                                       <file> is a newline ('\\n') separated list of keys, unless the -b flag is given\n"
 	"\n"
 "                     -b                <file> of --key-file is treated as a binary file, where a key is every 6 bytes\n"
 	"\n"
