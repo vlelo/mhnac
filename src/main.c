@@ -57,7 +57,7 @@ main(int argc, char *argv[])
 
 		if (G_opts.number_of_sectors != 0) {
 			if (G_opts.fun == inject_dump || G_opts.fun == recharge_card || G_opts.fun == print_dump) {
-				__WARN("Flag --n-sectors set with ann incompatible command: " F_STR, cmd(G_opts.fun));
+				__WARN("Flag --n-sectors set with an incompatible command: " F_STR, cmd(G_opts.fun));
 			}
 		} else {
 			G_opts.number_of_sectors = 4;
