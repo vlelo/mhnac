@@ -75,7 +75,7 @@ inject_dump(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 
   READ_DUMP(&dump, G_opts->input_loc);
 
-	for (register size_t i = 0; i < G_opts->number_of_sectors; i++) {
+	for (register long i = 0; i < G_opts->number_of_sectors; i++) {
 		_AUTH(key_index, G_opts, G_state->tag, (i + G_opts->number_of_sectors) * SECTOR_BLOCK_N, MFC_KEY_A)
 
 		for (register size_t j = 0; j < SECTOR_BLOCK_N - 1; j++) {
@@ -90,7 +90,7 @@ inject_dump(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 	for (register size_t i = 0; i < n_key_sector; i++) {
 		_AUTH(key_index, G_opts, G_state->tag, (i + 2 * G_opts->number_of_sectors) * SECTOR_BLOCK_N, MFC_KEY_A)
 
-		for (register size_t j = 0, sector_key_counter = 0; j < SECTOR_BLOCK_N - 1 && sector_key_counter < G_opts->number_of_sectors; j++, sector_key_counter++) {
+		for (register long j = 0, sector_key_counter = 0; j < SECTOR_BLOCK_N - 1 && sector_key_counter < G_opts->number_of_sectors; j++, sector_key_counter++) {
 			block_index_card = (i + 2 * G_opts->number_of_sectors) * SECTOR_BLOCK_N + j;
 			block_index_dump = (sector_key_counter + 1) * SECTOR_BLOCK_N;
 			mifare_classic_authenticate(G_state->tag, block_index_card, G_opts->keys[key_index], MFC_KEY_A);
@@ -113,7 +113,7 @@ transfer_credit(g_state_t *const restrict G_state, g_opts_t *const restrict G_op
 
   retreive_keys(G_state, G_opts);
 
-	for (register size_t i = 0; i < G_opts->number_of_sectors; i++) {
+	for (register long i = 0; i < G_opts->number_of_sectors; i++) {
 		_AUTH(src_key_index, G_opts, G_state->tag, (i + G_opts->number_of_sectors) * SECTOR_BLOCK_N, MFC_KEY_A)
 		_AUTH(dest_key_index, G_opts, G_state->tag, i * SECTOR_BLOCK_N, MFC_KEY_A)
 
@@ -157,7 +157,7 @@ dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 	size_t block_index;
 	init_dump(&dump, freefare_get_tag_uid(G_state->tag), G_opts->number_of_sectors);
 
-	for (register size_t i = 0; i < G_opts->number_of_sectors; i++) {
+	for (register long i = 0; i < G_opts->number_of_sectors; i++) {
 		_AUTH(key_index, G_opts, G_state->tag, i * SECTOR_BLOCK_N, MFC_KEY_A)
 		for (register size_t j = 0; j < SECTOR_BLOCK_N; j++) {
 			block_index = i * SECTOR_BLOCK_N + j;
@@ -187,7 +187,6 @@ void
 clean_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   MifareClassicBlock zero = {0};
-  dump_t dump;
 	int key_index;
 	size_t block_index;
 	size_t n_key_sector = (G_opts->number_of_sectors/SECTOR_BLOCK_N) + 1;
@@ -223,7 +222,7 @@ retreive_keys(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts
 	for (register size_t i = 0; i < n_key_sector; i++) {
 		_AUTH(key_index, G_opts, G_state->tag, (i + 2 * G_opts->number_of_sectors) * SECTOR_BLOCK_N, MFC_KEY_A)
 
-		for (register size_t j = 0, sector_key_counter = 0; j < SECTOR_BLOCK_N - 1 && sector_key_counter < G_opts->number_of_sectors; j++, sector_key_counter++) {
+		for (register long j = 0, sector_key_counter = 0; j < SECTOR_BLOCK_N - 1 && sector_key_counter < G_opts->number_of_sectors; j++, sector_key_counter++) {
 			block_index = (i + 2 * G_opts->number_of_sectors) * SECTOR_BLOCK_N + j;
 			mifare_classic_authenticate(G_state->tag, block_index, G_opts->keys[key_index], MFC_KEY_A);
 			READ(G_state->tag, block_index, &buf)

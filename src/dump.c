@@ -30,7 +30,7 @@ write_dump(dump_t *const restrict dump, const char *const restrict fname)
 	FWRITE(&dump->number_of_sectors, sizeof(dump->number_of_sectors), f);
 
 	/* DATA */
-	for (register size_t i; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
+	for (register size_t i = 0; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
 		FWRITE(dump->data.raw[i], sizeof(MifareClassicBlock), f)
 	}
 
@@ -78,7 +78,7 @@ read_dump(dump_t *const restrict dump, const char *const restrict fname)
 	fseek(f, pos, SEEK_SET);
 
 	/* DATA */
-	for (register size_t i; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
+	for (register size_t i = 0; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
 		FREAD(dump->data.raw[i], sizeof(MifareClassicBlock), f)
 	}
 
