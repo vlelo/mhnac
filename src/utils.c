@@ -108,20 +108,25 @@ inject_dump(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 void
 transfer_credit(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  // retreive_keys(G_state, G_opts);
-  //
-  // for (register size_t i = 0; i < 3; i++) {
-  //   _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
-  //   RESTORE(G_state->tag, i + INJECT_STRIDE);
-  //   _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE, MFC_KEY_A);
-  //   TRANSFER(G_state->tag, i + CREDIT_STRIDE);
-  // }
-  // for (register size_t i = 0; i < 3; i++) {
-  //   _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE + NEXT, MFC_KEY_A);
-  //   RESTORE(G_state->tag, i + INJECT_STRIDE + NEXT);
-  //   _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE + NEXT, MFC_KEY_A);
-  //   TRANSFER(G_state->tag, i + CREDIT_STRIDE + NEXT);
-  // }
+	int src_key_index, dest_key_index;
+	size_t src_index, dest_index;
+
+  retreive_keys(G_state, G_opts);
+
+	for (register size_t i = 0; i < G_opts->number_of_sectors; i++) {
+		_AUTH(src_key_index, G_opts, G_state->tag, (i + G_opts->number_of_sectors) * SECTOR_BLOCK_N, MFC_KEY_A)
+		_AUTH(dest_key_index, G_opts, G_state->tag, i * SECTOR_BLOCK_N, MFC_KEY_A)
+
+		for (register size_t j = 0; j < SECTOR_BLOCK_N - 1; j++) {
+			src_index = (i + G_opts->number_of_sectors) * SECTOR_BLOCK_N + j;
+			dest_index = i * SECTOR_BLOCK_N + j;
+
+			mifare_classic_authenticate(G_state->tag, src_index, G_opts->keys[src_key_index], MFC_KEY_A);
+			RESTORE(G_state->tag, src_index);
+			mifare_classic_authenticate(G_state->tag, dest_index, G_opts->keys[dest_key_index], MFC_KEY_A);
+			TRANSFER(G_state->tag, dest_index);
+		}
+	}
 }
 
 /**
