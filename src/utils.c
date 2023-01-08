@@ -93,7 +93,7 @@ inject_dump(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 		for (register size_t j = 0, sector_key_counter = 0; j < SECTOR_BLOCK_N - 1 && sector_key_counter < G_opts->number_of_sectors; j++, sector_key_counter++) {
 			block_index_card = (i + 2 * G_opts->number_of_sectors) * SECTOR_BLOCK_N + j;
 			block_index_dump = (sector_key_counter + 1) * SECTOR_BLOCK_N;
-			_AUTH(key_index, G_opts, G_state->tag, block_index_card, MFC_KEY_A)
+			mifare_classic_authenticate(G_state->tag, block_index_card, G_opts->keys[key_index], MFC_KEY_A);
 			WRITE(G_state->tag, block_index_card, dump.data.raw[block_index_dump])
 		}
 	}
@@ -215,20 +215,25 @@ clean_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 void
 retreive_keys(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  // MifareClassicBlock buf;
-  //
-  // _AUTH(G_opts, G_state->tag, KEY_STRIDE, MFC_KEY_A);
-  // READ(G_state->tag, KEY_STRIDE, &buf);
-  // G_opts->n_keys++;
-  // G_opts->keys = (MifareClassicKey *) realloc(
-  //   G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
-  // memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
-  //
-  // _AUTH(G_opts, G_state->tag, KEY_STRIDE + 1, MFC_KEY_A);
-  // READ(G_state->tag, KEY_STRIDE + 1, &buf);
-  // G_opts->keys = (MifareClassicKey *) realloc(
-  //   G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
-  // memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
+  MifareClassicBlock buf;
+	int key_index;
+	size_t n_key_sector = (G_opts->number_of_sectors/SECTOR_BLOCK_N) + 1;
+	size_t block_index;
+
+	for (register size_t i = 0; i < n_key_sector; i++) {
+		_AUTH(key_index, G_opts, G_state->tag, (i + 2 * G_opts->number_of_sectors) * SECTOR_BLOCK_N, MFC_KEY_A)
+
+		for (register size_t j = 0, sector_key_counter = 0; j < SECTOR_BLOCK_N - 1 && sector_key_counter < G_opts->number_of_sectors; j++, sector_key_counter++) {
+			block_index = (i + 2 * G_opts->number_of_sectors) * SECTOR_BLOCK_N + j;
+			mifare_classic_authenticate(G_state->tag, block_index, G_opts->keys[key_index], MFC_KEY_A);
+			READ(G_state->tag, block_index, &buf)
+
+			G_opts->n_keys++;
+      G_opts->keys = (MifareClassicKey *) realloc(
+        G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
+      memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
+		}
+	}
 }
 
 /**
