@@ -53,7 +53,7 @@ parse_user_flags(const int argc, char *const argv[], g_opts_t *const restrict G_
       MULTI_CMD;
       G_opts->input_loc = (char *) malloc(sizeof(char) * (strlen(optarg) + 1));
       strncpy(G_opts->input_loc, optarg, sizeof(char) * (strlen(optarg) + 1));
-      G_opts->fun = inject_block;
+      G_opts->fun = inject_dump;
       break;
     case 'T':
       MULTI_CMD;

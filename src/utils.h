@@ -69,7 +69,7 @@ void
 bin2hex(char *const dest, const uint8_t *const bin, const size_t szBytes);
 
 void
-inject_block(g_state_t *G_state, g_opts_t *G_opts);
+inject_dump(g_state_t *G_state, g_opts_t *G_opts);
 
 void
 transfer_credit(g_state_t *G_state, g_opts_t *G_opts);

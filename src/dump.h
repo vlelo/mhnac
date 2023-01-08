@@ -14,6 +14,7 @@
 
 #define UID_SIZE       4
 #define SECTOR_BLOCK_N 4
+#define MAX_BLOCK_N 64
 
 #define DUMP_HEADER_SIZE                                                                 \
   (sizeof(dump_t) - sizeof(MifareClassicBlock (*) [SECTOR_BLOCK_N]))
