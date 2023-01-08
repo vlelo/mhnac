@@ -192,9 +192,9 @@ dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
   }
 
   if (G_opts->output_loc == NULL) {
-    G_opts->output_loc = malloc(sizeof(char) * (4 * 2 + 4)); // 4*2 = uid hex + 4 ".bin"
+    G_opts->output_loc = malloc(sizeof(char) * (4 * 2 + 5)); // 4*2 = uid hex + 5 ".mhnac"
     strcpy(G_opts->output_loc, freefare_get_tag_uid(G_state->tag));
-    strcat(G_opts->output_loc, ".bin");
+    strcat(G_opts->output_loc, ".mhnac");
   }
 
   WRITE_DUMP(&dump, G_opts->output_loc);
