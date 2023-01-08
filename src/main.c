@@ -19,7 +19,19 @@
 
 static g_state_t G_state = {0};
 
-static g_opts_t G_opts = {0};
+static g_opts_t G_opts = {
+	.desired_device = NULL,
+  .output_loc = NULL,
+  .input_loc = NULL,
+  .keys = NULL,
+	.key_file_opts = {
+		.input_loc = NULL,
+		.bin = false,
+	},
+  .n_keys = 0,
+	.number_of_sectors = 4,
+	.fun = NULL,
+};
 
 //------------------------------------------------------------------//
 //                      Function declarations                       //

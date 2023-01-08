@@ -1,8 +1,11 @@
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "dump.h"
+#include "util.h"
+#include "utils.h"
 
 /**
  * @brief Write dump object to file
@@ -27,8 +30,8 @@ write_dump(dump_t *const restrict dump, const char *const restrict fname)
 	FWRITE(&dump->number_of_sectors, sizeof(dump->number_of_sectors), f);
 
 	/* DATA */
-	for (register size_t i; i < dump->number_of_sectors; i++) {
-		FWRITE(dump->data[i], sizeof(MifareClassicBlock[SECTOR_BLOCK_N]), f)
+	for (register size_t i; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
+		FWRITE(dump->data.raw[i], sizeof(MifareClassicBlock), f)
 	}
 
   fclose(f);
@@ -75,9 +78,38 @@ read_dump(dump_t *const restrict dump, const char *const restrict fname)
 	fseek(f, pos, SEEK_SET);
 
 	/* DATA */
-	for (register size_t i; i < dump->number_of_sectors; i++) {
-		FREAD(dump->data[i], sizeof(MifareClassicBlock[SECTOR_BLOCK_N]), f)
+	for (register size_t i; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
+		FREAD(dump->data.raw[i], sizeof(MifareClassicBlock), f)
 	}
 
   return 0;
+}
+
+/**
+ * @brief Initialize a `dump_t` dump and allocate it's space
+ *
+ * @param `dump` Dump to be initialized
+ * @param `uid` UID in string format
+ * @param `number_of_sectors` Number of sectors the dump should hold
+ */
+void
+init_dump(dump_t *const restrict dump, const char *const restrict uid, const uint8_t number_of_sectors)
+{
+  memcpy(dump->mhnac, mhnac, sizeof(mhnac));
+  dump->creation_time = time(NULL);
+  hex2bin(dump->uid, uid, sizeof(dump->uid));
+	dump->number_of_sectors = number_of_sectors;
+	dump->data.raw = malloc(sizeof(MifareClassicBlock) * number_of_sectors * SECTOR_BLOCK_N);
+	dump->data.formatted = (MifareClassicBlock (*)[SECTOR_BLOCK_N]) dump->data.raw;
+}
+
+/**
+ * @brief Free allocated space of a `dump_t` dump
+ *
+ * @param `dump` Dump to be freed
+ */
+void
+free_dump(dump_t * dump)
+{
+	free(dump->data.raw);
 }

@@ -88,7 +88,10 @@ typedef struct dump {
   time_t creation_time;
   uint8_t uid[UID_SIZE];
   uint8_t number_of_sectors;
-  MifareClassicBlock (*data)[SECTOR_BLOCK_N];
+	struct {
+		MifareClassicBlock (*formatted)[SECTOR_BLOCK_N];
+		MifareClassicBlock *raw;
+	} data;
 } dump_t;
 
 //------------------------------------------------------------------//
@@ -100,5 +103,11 @@ write_dump(dump_t *const dump, const char *const fname);
 
 int
 read_dump(dump_t *const dump, const char *const fname);
+
+void
+init_dump(dump_t *const dump, const char *const uid, const uint8_t number_of_sectors);
+
+void
+free_dump(dump_t *dump);
 
 #endif // !_DUMP_H_

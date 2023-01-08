@@ -13,12 +13,6 @@
 //                              Macros                              //
 //------------------------------------------------------------------//
 
-#define CREDIT_STRIDE 8
-#define INJECT_STRIDE 52
-#define NEXT          4
-#define KEY_STRIDE    60
-#define READ_AMOUNT   8
-
 // #define AUTH(tag, block, key, type)                                                      \
 //   {                                                                                      \
 //     if (mifare_classic_authenticate((tag), (block), (key), (type)) < 0) {                \
@@ -33,9 +27,9 @@
 //       }                                                                                  \
 //     }                                                                                    \
 //   }
-#define _AUTH(G_opts, tag, block, key_type)                                              \
+#define _AUTH(ret, G_opts, tag, block, key_type)                                         \
   {                                                                                      \
-    if (AUTH((G_opts), (tag), (block), (key_type)) < 0) {                                \
+    if (((ret) = AUTH((G_opts), (tag), (block), (key_type))) < 0) {                        \
       __PANIC_ptr(EXIT_FAILURE, "Could not authenticate to tag with any key", NULL)      \
     }                                                                                    \
   }

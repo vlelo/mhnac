@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -67,22 +68,22 @@ bin2hex(char *const dest, const uint8_t *const bin, const size_t szBytes)
 void
 inject_block(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  dump_t dump;
-
-  READ_DUMP(&dump, G_opts->input_loc);
-
-  for (register size_t i = 0; i < 3; i++) {
-    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
-    WRITE(G_state->tag, i + INJECT_STRIDE, dump.data.ordered.data[i]);
-  }
-  for (register size_t i = 0; i < 3; i++) {
-    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE + NEXT, MFC_KEY_A);
-    WRITE(G_state->tag, i + INJECT_STRIDE + NEXT, dump.data.ordered.mistery[i]);
-  }
-  _AUTH(G_opts, G_state->tag, INJECT_STRIDE + 2 * NEXT, MFC_KEY_A);
-  WRITE(G_state->tag, INJECT_STRIDE + 2 * NEXT, dump.data.ordered.data[3]);
-  _AUTH(G_opts, G_state->tag, INJECT_STRIDE + 2 * NEXT + 1, MFC_KEY_A);
-  WRITE(G_state->tag, INJECT_STRIDE + 2 * NEXT + 1, dump.data.ordered.mistery[3]);
+  // dump_t dump;
+  //
+  // READ_DUMP(&dump, G_opts->input_loc);
+  //
+  // for (register size_t i = 0; i < 3; i++) {
+  //   _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
+  //   WRITE(G_state->tag, i + INJECT_STRIDE, dump.data.ordered.data[i]);
+  // }
+  // for (register size_t i = 0; i < 3; i++) {
+  //   _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE + NEXT, MFC_KEY_A);
+  //   WRITE(G_state->tag, i + INJECT_STRIDE + NEXT, dump.data.ordered.mistery[i]);
+  // }
+  // _AUTH(G_opts, G_state->tag, INJECT_STRIDE + 2 * NEXT, MFC_KEY_A);
+  // WRITE(G_state->tag, INJECT_STRIDE + 2 * NEXT, dump.data.ordered.data[3]);
+  // _AUTH(G_opts, G_state->tag, INJECT_STRIDE + 2 * NEXT + 1, MFC_KEY_A);
+  // WRITE(G_state->tag, INJECT_STRIDE + 2 * NEXT + 1, dump.data.ordered.mistery[3]);
 }
 
 /**
@@ -94,20 +95,20 @@ inject_block(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 void
 transfer_credit(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  retreive_keys(G_state, G_opts);
-
-  for (register size_t i = 0; i < 3; i++) {
-    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
-    RESTORE(G_state->tag, i + INJECT_STRIDE);
-    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE, MFC_KEY_A);
-    TRANSFER(G_state->tag, i + CREDIT_STRIDE);
-  }
-  for (register size_t i = 0; i < 3; i++) {
-    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE + NEXT, MFC_KEY_A);
-    RESTORE(G_state->tag, i + INJECT_STRIDE + NEXT);
-    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE + NEXT, MFC_KEY_A);
-    TRANSFER(G_state->tag, i + CREDIT_STRIDE + NEXT);
-  }
+  // retreive_keys(G_state, G_opts);
+  //
+  // for (register size_t i = 0; i < 3; i++) {
+  //   _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
+  //   RESTORE(G_state->tag, i + INJECT_STRIDE);
+  //   _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE, MFC_KEY_A);
+  //   TRANSFER(G_state->tag, i + CREDIT_STRIDE);
+  // }
+  // for (register size_t i = 0; i < 3; i++) {
+  //   _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE + NEXT, MFC_KEY_A);
+  //   RESTORE(G_state->tag, i + INJECT_STRIDE + NEXT);
+  //   _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE + NEXT, MFC_KEY_A);
+  //   TRANSFER(G_state->tag, i + CREDIT_STRIDE + NEXT);
+  // }
 }
 
 /**
@@ -119,9 +120,9 @@ transfer_credit(g_state_t *const restrict G_state, g_opts_t *const restrict G_op
 void
 recharge_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  inject_block(G_state, G_opts);
-  transfer_credit(G_state, G_opts);
-  clean_card(G_state, G_opts);
+  // inject_block(G_state, G_opts);
+  // transfer_credit(G_state, G_opts);
+  // clean_card(G_state, G_opts);
 }
 
 /**
@@ -134,14 +135,18 @@ void
 dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   dump_t dump;
-  for (register size_t i = 0; i < 3; i++) {
-    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE, MFC_KEY_A);
-    READ(G_state->tag, i + CREDIT_STRIDE, &dump.data.ordered.data[i]);
-  }
-  for (register size_t i = 0; i < 3; i++) {
-    _AUTH(G_opts, G_state->tag, i + CREDIT_STRIDE + NEXT, MFC_KEY_A);
-    READ(G_state->tag, i + CREDIT_STRIDE + NEXT, &dump.data.ordered.mistery[i]);
-  }
+	int key_index;
+	size_t block_index;
+	init_dump(&dump, freefare_get_tag_uid(G_state->tag), G_opts->number_of_sectors);
+
+	for (register size_t i = 0; i < G_opts->number_of_sectors; i++) {
+		_AUTH(key_index, G_opts, G_state->tag, SECTOR_BLOCK_N * i, MFC_KEY_A)
+		for (register size_t j = 0; j < SECTOR_BLOCK_N; j++) {
+			block_index = i * SECTOR_BLOCK_N + j;
+			AUTH(G_opts, G_state->tag, block_index, MFC_KEY_A);
+			READ(G_state->tag, block_index, &dump.data.raw[block_index])
+		}
+	}
 
   if (G_opts->output_loc == NULL) {
     G_opts->output_loc = malloc(sizeof(char) * (4 * 2 + 4)); // 4*2 = uid hex + 4 ".bin"
@@ -149,11 +154,9 @@ dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
     strcat(G_opts->output_loc, ".bin");
   }
 
-  hex2bin(dump.uid, freefare_get_tag_uid(G_state->tag), sizeof(dump.uid));
-  dump.creation_time = time(NULL);
-  memcpy(dump.mhnac, mhnac, sizeof(mhnac));
-
   WRITE_DUMP(&dump, G_opts->output_loc);
+
+	free_dump(&dump);
 }
 
 /**
@@ -165,16 +168,16 @@ dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 void
 clean_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  MifareClassicBlock zero = {0};
-
-  for (register size_t i = 0; i < 12; i++) {
-    if (!i % 3) {
-      continue;
-    }
-    _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
-    WRITE(G_state->tag, i + INJECT_STRIDE, zero);
-  }
-  RESTORE(G_state->tag, INJECT_STRIDE);
+  // MifareClassicBlock zero = {0};
+  //
+  // for (register size_t i = 0; i < 12; i++) {
+  //   if (!i % 3) {
+  //     continue;
+  //   }
+  //   _AUTH(G_opts, G_state->tag, i + INJECT_STRIDE, MFC_KEY_A);
+  //   WRITE(G_state->tag, i + INJECT_STRIDE, zero);
+  // }
+  // RESTORE(G_state->tag, INJECT_STRIDE);
 }
 
 /**
@@ -187,20 +190,20 @@ clean_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 void
 retreive_keys(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
-  MifareClassicBlock buf;
-
-  _AUTH(G_opts, G_state->tag, KEY_STRIDE, MFC_KEY_A);
-  READ(G_state->tag, KEY_STRIDE, &buf);
-  G_opts->n_keys++;
-  G_opts->keys = (MifareClassicKey *) realloc(
-    G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
-  memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
-
-  _AUTH(G_opts, G_state->tag, KEY_STRIDE + 1, MFC_KEY_A);
-  READ(G_state->tag, KEY_STRIDE + 1, &buf);
-  G_opts->keys = (MifareClassicKey *) realloc(
-    G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
-  memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
+  // MifareClassicBlock buf;
+  //
+  // _AUTH(G_opts, G_state->tag, KEY_STRIDE, MFC_KEY_A);
+  // READ(G_state->tag, KEY_STRIDE, &buf);
+  // G_opts->n_keys++;
+  // G_opts->keys = (MifareClassicKey *) realloc(
+  //   G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
+  // memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
+  //
+  // _AUTH(G_opts, G_state->tag, KEY_STRIDE + 1, MFC_KEY_A);
+  // READ(G_state->tag, KEY_STRIDE + 1, &buf);
+  // G_opts->keys = (MifareClassicKey *) realloc(
+  //   G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
+  // memcpy(G_opts->keys[G_opts->n_keys - 1], buf, KEY_SIZE);
 }
 
 /**
@@ -222,7 +225,7 @@ AUTH(const g_opts_t *const restrict G_opts,
 {
   for (register size_t i = 0; i < G_opts->n_keys; i++) {
     if (mifare_classic_authenticate(tag, block, G_opts->keys[i], key_type) == 0) {
-      return 0;
+      return i;
     }
   }
   return -1;
