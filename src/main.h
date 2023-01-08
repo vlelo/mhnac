@@ -27,7 +27,7 @@
 #define ITAL "\x1B[3m"
 #define UNDE "\x1B[4m"
 
-#define F_STR BOLD "`%s" RESET
+#define F_STR BOLD "`%s`" RESET
 #define F_NUM CYN "%d" RESET
 
 #define __FREE_ALL                                                                       \
