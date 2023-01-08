@@ -38,14 +38,7 @@
       nfc_close(G_state.pnd);                                                            \
     if (G_state.tags)                                                                    \
       freefare_free_tags(G_state.tags);                                                  \
-    if (G_opts.desired_device)                                                           \
-      free(G_opts.desired_device);                                                       \
-    if (G_opts.input_loc)                                                                \
-      free(G_opts.input_loc);                                                            \
-    if (G_opts.output_loc)                                                               \
-      free(G_opts.output_loc);                                                           \
-    if (G_opts.keys)                                                                     \
-      free(G_opts.keys);                                                                 \
+    FREE_OPTS                                                                            \
   }
 #define __FREE_ALL_ptr                                                                   \
   {                                                                                      \
@@ -57,12 +50,7 @@
       freefare_free_tags(G_state->tags);                                                 \
     if (G_opts->desired_device)                                                          \
       free(G_opts->desired_device);                                                      \
-    if (G_opts->input_loc)                                                               \
-      free(G_opts->input_loc);                                                           \
-    if (G_opts->output_loc)                                                              \
-      free(G_opts->output_loc);                                                          \
-    if (G_opts->keys)                                                                    \
-      free(G_opts->keys);                                                                \
+    FREE_OPTS_ptr                                                                        \
   }
 #ifndef DEBUG
 #define __ERROR(msg, ...)                                                                \
@@ -150,8 +138,12 @@
     }                                                                                    \
   }
 
-#define KEY_SIZE 6
-#define KEY_SIZE_CHAR 12
+#define KEY_SIZE         6
+#define KEY_SIZE_CHAR    12
+#define ACCESS_SIZE      4
+#define ACCESS_SIZE_CHAR 8
+#define BLOCK_SIZE       16
+#define BLOCK_SIZE_CHAR  32
 
 //------------------------------------------------------------------//
 //                              Types                               //

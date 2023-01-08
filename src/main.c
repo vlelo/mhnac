@@ -20,17 +20,18 @@
 static g_state_t G_state = {0};
 
 static g_opts_t G_opts = {
-	.desired_device = NULL,
+  .desired_device = NULL,
   .output_loc = NULL,
   .input_loc = NULL,
   .keys = NULL,
-	.key_file_opts = {
-		.input_loc = NULL,
-		.bin = false,
-	},
+  .key_file_opts =
+    {
+                    .input_loc = NULL,
+                    .bin = false,
+                    },
   .n_keys = 0,
-	.number_of_sectors = 4,
-	.fun = NULL,
+  .number_of_sectors = 4,
+  .fun = NULL,
 };
 
 //------------------------------------------------------------------//
@@ -56,6 +57,12 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
   parse_user_flags(argc, argv, &G_opts);
+  if (G_opts.fun == print_dump) {
+    print_dump(&G_state, &G_opts);
+    FREE_OPTS
+    exit(EXIT_SUCCESS);
+  }
+
   if (G_opts.key_file_opts.input_loc) {
     keys_from_file(&G_opts);
   }
@@ -122,6 +129,8 @@ main(int argc, char *argv[])
     __PANIC_FF(EXIT_FAILURE, G_state.tag);
   }
 
+  /* free options object */
+  FREE_OPTS
   /* free all found tags */
   freefare_free_tags(G_state.tags);
   /* close device */

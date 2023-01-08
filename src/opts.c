@@ -19,6 +19,7 @@ static const struct option longopts[] = {
   {"recharge",  required_argument, 0, 'R'},
   {"dump",      no_argument,       0, 'D'},
   {"clean",     no_argument,       0, 'C'},
+  {"print",     required_argument, 0, 'P'},
   {"out",       required_argument, 0, 'o'},
   {"device",    required_argument, 0, 'd'},
   {"key",       required_argument, 0, 'k'},
@@ -29,7 +30,7 @@ static const struct option longopts[] = {
 
 // static const char *optstring = "abc:d:012";
 
-static const char *optstring = ":hJ:TR:DCo:d:k:f:n:b";
+static const char *optstring = ":hJ:TR:DCP:o:d:k:f:n:b";
 
 /**
  * @brief Sets the global program options by parsing user arguments
@@ -42,7 +43,7 @@ void
 parse_user_flags(const int argc, char *const argv[], g_opts_t *const restrict G_opts)
 {
   opterr = 0; // don't use default getopt errors
-	char **strotl_err = NULL;
+  char **strotl_err = NULL;
   int c;
   while ((c = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
     switch (c) {
@@ -73,6 +74,12 @@ parse_user_flags(const int argc, char *const argv[], g_opts_t *const restrict G_
       MULTI_CMD;
       G_opts->fun = clean_card;
       break;
+    case 'P':
+      MULTI_CMD;
+      G_opts->input_loc = (char *) malloc(sizeof(char) * (strlen(optarg) + 1));
+      strncpy(G_opts->input_loc, optarg, sizeof(char) * (strlen(optarg) + 1));
+      G_opts->fun = print_dump;
+      break;
     case 'o':
       G_opts->output_loc = (char *) malloc(sizeof(char) * (strlen(optarg) + 1));
       strncpy(G_opts->output_loc, optarg, sizeof(char) * (strlen(optarg) + 1));
@@ -91,39 +98,33 @@ parse_user_flags(const int argc, char *const argv[], g_opts_t *const restrict G_
         G_opts->key_file_opts.input_loc, optarg, sizeof(char) * (strlen(optarg) + 1));
       break;
     case 'n':
-			G_opts->number_of_sectors = strtol(optarg, strotl_err, 10);
+      G_opts->number_of_sectors = strtol(optarg, strotl_err, 10);
 
-			if (G_opts->number_of_sectors <= 0) {
-				if (strotl_err) {
-					__ERROR("Invalid argument to number of sectors: " F_STR, optarg)
-					FREE_OPTS
-					exit(EXIT_FAILURE);
-				}
-				__ERROR("Number of sectors must be positive non zero", NULL)
-				FREE_OPTS
-				exit(EXIT_FAILURE);
-			} else if (G_opts->number_of_sectors > 6) {
-				__ERROR("Number of sectors must be at most " CYN "6" RESET, NULL)
-				FREE_OPTS
-				exit(EXIT_FAILURE);
-			}
+      if (G_opts->number_of_sectors <= 0) {
+        if (strotl_err) {
+          __ERROR("Invalid argument to number of sectors: " F_STR, optarg)
+          FREE_OPTS_ptr exit(EXIT_FAILURE);
+        }
+        __ERROR("Number of sectors must be positive non zero", NULL)
+        FREE_OPTS_ptr exit(EXIT_FAILURE);
+      } else if (G_opts->number_of_sectors > 6) {
+        __ERROR("Number of sectors must be at most " CYN "6" RESET, NULL)
+        FREE_OPTS_ptr exit(EXIT_FAILURE);
+      }
       break;
     case 'b':
       G_opts->key_file_opts.bin = true;
       break;
     case '?': // unknown option
       __ERROR("invalid option " F_STR, argv[optind - 1]);
-      FREE_OPTS
-      exit(EXIT_FAILURE);
+      FREE_OPTS_ptr exit(EXIT_FAILURE);
       break;
     case ':': // missing option argument
       __ERROR("option " F_STR " requires an argument", argv[optind - 1]);
-      FREE_OPTS
-      exit(EXIT_FAILURE);
+      FREE_OPTS_ptr exit(EXIT_FAILURE);
       break;
     default:
-      FREE_OPTS
-      fprintf(stderr, "Ambiguous option? %s -%c", argv[optind - 1], optopt);
+      FREE_OPTS_ptr fprintf(stderr, "Ambiguous option? %s -%c", argv[optind - 1], optopt);
       exit(EXIT_FAILURE);
     };
   };
@@ -152,8 +153,7 @@ keys_from_stdin(const char *restrict optarg, g_opts_t *const restrict G_opts)
     case ':':
       if (count != KEY_SIZE_CHAR) {
         __ERROR("Invalid key size: " CYN "%.*s" RESET, count, optarg)
-        FREE_OPTS
-        exit(EXIT_FAILURE);
+        FREE_OPTS_ptr exit(EXIT_FAILURE);
       }
       n_keys++;
       G_opts->keys =
@@ -197,8 +197,7 @@ keys_from_file(g_opts_t *const restrict G_opts)
 
   if (G_opts->key_file_opts.bin) {
     if ((f = fopen(G_opts->key_file_opts.input_loc, "rx")) == NULL) {
-      FREE_OPTS
-      __ERROR("%s", strerror(errno));
+      FREE_OPTS_ptr __ERROR("%s", strerror(errno));
       exit(EXIT_FAILURE);
     }
 
@@ -217,8 +216,7 @@ keys_from_file(g_opts_t *const restrict G_opts)
     }
   } else {
     if ((f = fopen(G_opts->key_file_opts.input_loc, "r")) == NULL) {
-      FREE_OPTS
-      __ERROR("%s", strerror(errno));
+      FREE_OPTS_ptr __ERROR("%s", strerror(errno));
       exit(EXIT_FAILURE);
     }
 
@@ -235,8 +233,7 @@ keys_from_file(g_opts_t *const restrict G_opts)
                   ": key too short on line " CYN "%ld" RESET,
                   G_opts->key_file_opts.input_loc,
                   line_n)
-          FREE_OPTS
-          exit(EXIT_FAILURE);
+          FREE_OPTS_ptr exit(EXIT_FAILURE);
         }
         G_opts->n_keys++;
         G_opts->keys = (MifareClassicKey *) realloc(
@@ -251,8 +248,7 @@ keys_from_file(g_opts_t *const restrict G_opts)
                   ": leading characters on line " CYN "%ld" RESET,
                   G_opts->key_file_opts.input_loc,
                   line_n)
-          FREE_OPTS
-          exit(EXIT_FAILURE);
+          FREE_OPTS_ptr exit(EXIT_FAILURE);
         }
         strBuffer[count] = c;
         count++;

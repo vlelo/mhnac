@@ -14,10 +14,9 @@
 
 #define UID_SIZE       4
 #define SECTOR_BLOCK_N 4
-#define MAX_BLOCK_N 64
+#define MAX_BLOCK_N    64
 
-#define DUMP_HEADER_SIZE                                                                 \
-  (sizeof(dump_t) - sizeof(MifareClassicBlock (*) [SECTOR_BLOCK_N]))
+#define DUMP_HEADER_SIZE (sizeof(dump_t) - sizeof(MifareClassicBlock(*)[SECTOR_BLOCK_N]))
 #define DUMP_CONTENT_SIZE(dump)                                                          \
   ((dump)->number_of_sectors * sizeof(MifareClassicBlock[SECTOR_BLOCK_N]))
 #define DUMP_SIZE(dump) (DUMP_HEADER_SIZE + DUMP_CONTENT_SIZE((dump)))
@@ -89,10 +88,10 @@ typedef struct dump {
   time_t creation_time;
   uint8_t uid[UID_SIZE];
   uint8_t number_of_sectors;
-	struct {
-		MifareClassicBlock (*formatted)[SECTOR_BLOCK_N];
-		MifareClassicBlock *raw;
-	} data;
+  struct {
+    MifareClassicBlock (*formatted)[SECTOR_BLOCK_N];
+    MifareClassicBlock *raw;
+  } data;
 } dump_t;
 
 //------------------------------------------------------------------//

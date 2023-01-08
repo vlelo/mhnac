@@ -11,6 +11,19 @@
 
 #define FREE_OPTS                                                                        \
   {                                                                                      \
+    if (G_opts.desired_device)                                                           \
+      free(G_opts.desired_device);                                                       \
+    if (G_opts.input_loc)                                                                \
+      free(G_opts.input_loc);                                                            \
+    if (G_opts.output_loc)                                                               \
+      free(G_opts.output_loc);                                                           \
+    if (G_opts.keys)                                                                     \
+      free(G_opts.keys);                                                                 \
+    if (G_opts.key_file_opts.input_loc)                                                  \
+      free(G_opts.key_file_opts.input_loc);                                              \
+  }
+#define FREE_OPTS_ptr                                                                    \
+  {                                                                                      \
     if (G_opts->desired_device)                                                          \
       free(G_opts->desired_device);                                                      \
     if (G_opts->input_loc)                                                               \
@@ -26,8 +39,7 @@
   {                                                                                      \
     if (G_opts->fun != NULL) {                                                           \
       __ERROR("Multiple commands specified", NULL)                                       \
-      FREE_OPTS                                                                          \
-      exit(EXIT_FAILURE);                                                                \
+      FREE_OPTS_ptr exit(EXIT_FAILURE);                                                  \
     }                                                                                    \
   }
 
@@ -45,7 +57,7 @@ typedef struct g_opts {
     bool bin;
   } key_file_opts;
   size_t n_keys;
-	long int number_of_sectors;
+  long int number_of_sectors;
   void (*fun)(g_state_t *, struct g_opts *);
 } g_opts_t;
 

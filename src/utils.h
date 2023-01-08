@@ -84,6 +84,9 @@ void
 clean_card(g_state_t *G_state, g_opts_t *G_opts);
 
 void
+print_dump(g_state_t *const G_state, g_opts_t *const G_opts);
+
+void
 retreive_keys(g_state_t *G_state, g_opts_t *G_opts);
 
 #endif /* !_UTILS_H_ */

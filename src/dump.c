@@ -23,16 +23,16 @@ write_dump(dump_t *const restrict dump, const char *const restrict fname)
 
   FOPENW(f, fname);
 
-	/* HEADER */
-	FWRITE(dump->mhnac, sizeof(dump->mhnac), f);
-	FWRITE(&dump->creation_time, sizeof(dump->creation_time), f);
-	FWRITE(dump->uid, sizeof(dump->uid), f);
-	FWRITE(&dump->number_of_sectors, sizeof(dump->number_of_sectors), f);
+  /* HEADER */
+  FWRITE(dump->mhnac, sizeof(dump->mhnac), f);
+  FWRITE(&dump->creation_time, sizeof(dump->creation_time), f);
+  FWRITE(dump->uid, sizeof(dump->uid), f);
+  FWRITE(&dump->number_of_sectors, sizeof(dump->number_of_sectors), f);
 
-	/* DATA */
-	for (register size_t i = 0; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
-		FWRITE(dump->data.raw[i], sizeof(MifareClassicBlock), f)
-	}
+  /* DATA */
+  for (register size_t i = 0; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
+    FWRITE(dump->data.raw[i], sizeof(MifareClassicBlock), f)
+  }
 
   fclose(f);
 
@@ -56,31 +56,31 @@ read_dump(dump_t *const restrict dump, const char *const restrict fname)
 
   FOPENR(f, fname);
 
-	/* HEADER */
-	FREAD(dump->mhnac, sizeof(dump->mhnac), f);
-	FREAD(&dump->creation_time, sizeof(dump->creation_time), f);
-	FREAD(dump->uid, sizeof(dump->uid), f);
-	FREAD(&dump->number_of_sectors, sizeof(dump->number_of_sectors), f);
+  /* HEADER */
+  FREAD(dump->mhnac, sizeof(dump->mhnac), f);
+  FREAD(&dump->creation_time, sizeof(dump->creation_time), f);
+  FREAD(dump->uid, sizeof(dump->uid), f);
+  FREAD(&dump->number_of_sectors, sizeof(dump->number_of_sectors), f);
 
   if (memcmp(dump->mhnac, mhnac, sizeof(mhnac))) {
     return -2;
   }
-	if (dump->number_of_sectors > 6 || dump->number_of_sectors <= 0) {
+  if (dump->number_of_sectors > 6 || dump->number_of_sectors <= 0) {
     return -2;
-	}
+  }
 
-	size_t pos = ftell(f);
+  size_t pos = ftell(f);
   fseek(f, 0L, SEEK_END);
   if (ftell(f) != DUMP_SIZE(dump)) {
     fclose(f);
     return -2;
   }
-	fseek(f, pos, SEEK_SET);
+  fseek(f, pos, SEEK_SET);
 
-	/* DATA */
-	for (register size_t i = 0; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
-		FREAD(dump->data.raw[i], sizeof(MifareClassicBlock), f)
-	}
+  /* DATA */
+  for (register size_t i = 0; i < dump->number_of_sectors * SECTOR_BLOCK_N; i++) {
+    FREAD(dump->data.raw[i], sizeof(MifareClassicBlock), f)
+  }
 
   return 0;
 }
@@ -93,14 +93,19 @@ read_dump(dump_t *const restrict dump, const char *const restrict fname)
  * @param `number_of_sectors` Number of sectors the dump should hold
  */
 void
-init_dump(dump_t *const restrict dump, const char *const restrict uid, const uint8_t number_of_sectors)
+init_dump(dump_t *const restrict dump,
+          const char *const restrict uid,
+          const uint8_t number_of_sectors)
 {
   memcpy(dump->mhnac, mhnac, sizeof(mhnac));
   dump->creation_time = time(NULL);
-  hex2bin(dump->uid, uid, sizeof(dump->uid));
-	dump->number_of_sectors = number_of_sectors;
-	dump->data.raw = malloc(sizeof(MifareClassicBlock) * number_of_sectors * SECTOR_BLOCK_N);
-	dump->data.formatted = (MifareClassicBlock (*)[SECTOR_BLOCK_N]) dump->data.raw;
+  if (uid) {
+    hex2bin(dump->uid, uid, sizeof(dump->uid));
+  }
+  dump->number_of_sectors = number_of_sectors;
+  dump->data.raw =
+    malloc(sizeof(MifareClassicBlock) * number_of_sectors * SECTOR_BLOCK_N);
+  dump->data.formatted = (MifareClassicBlock(*)[SECTOR_BLOCK_N]) dump->data.raw;
 }
 
 /**
@@ -109,7 +114,7 @@ init_dump(dump_t *const restrict dump, const char *const restrict uid, const uin
  * @param `dump` Dump to be freed
  */
 void
-free_dump(dump_t * dump)
+free_dump(dump_t *dump)
 {
-	free(dump->data.raw);
+  free(dump->data.raw);
 }
