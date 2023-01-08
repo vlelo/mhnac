@@ -7,11 +7,19 @@
 #include "main.h"
 #include "utils.h"
 
+//------------------------------------------------------------------//
+//                      Function declarations                       //
+//------------------------------------------------------------------//
+
 __inline__ int
 AUTH(const g_opts_t *const restrict G_opts,
      const MifareTag tag,
      const MifareClassicBlockNumber block,
      const MifareClassicKeyType key_type);
+
+//------------------------------------------------------------------//
+//                       Funciton definitions                       //
+//------------------------------------------------------------------//
 
 /**
  * @brief Writes in `&dest` `szBytes` bytes of binary data, given by the hexadecimal
@@ -142,6 +150,8 @@ dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
   }
 
   hex2bin(dump.uid, freefare_get_tag_uid(G_state->tag), sizeof(dump.uid));
+  dump.creation_time = time(NULL);
+  memcpy(dump.mhnac, mhnac, sizeof(mhnac));
 
   WRITE_DUMP(&dump, G_opts->output_loc);
 }

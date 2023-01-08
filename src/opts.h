@@ -45,6 +45,7 @@ typedef struct g_opts {
     bool bin;
   } key_file_opts;
   size_t n_keys;
+	long int number_of_sectors;
   void (*fun)(g_state_t *, struct g_opts *);
 } g_opts_t;
 

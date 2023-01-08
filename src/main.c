@@ -62,7 +62,7 @@ main(int argc, char *argv[])
   G_state.pnd = nfc_open(G_state.context, G_opts.desired_device);
   if (G_state.pnd == NULL) {
     __PANIC(EXIT_FAILURE,
-            "Unable to open NFC device " BOLD "`%s`" RESET,
+            "Unable to open NFC device " F_STR,
             (G_opts.desired_device ? G_opts.desired_device : "default"));
   }
 
@@ -119,6 +119,10 @@ main(int argc, char *argv[])
 
   exit(EXIT_SUCCESS);
 }
+
+//------------------------------------------------------------------//
+//                       Funciton definitions                       //
+//------------------------------------------------------------------//
 
 /**
  * @brief Handler for unix signal

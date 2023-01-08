@@ -13,22 +13,23 @@
 #include "utils.h"
 
 static const struct option longopts[] = {
-  {"help",     no_argument,       0, 'h'},
-  {"inject",   required_argument, 0, 'J'},
-  {"transfer", no_argument,       0, 'T'},
-  {"recharge", required_argument, 0, 'R'},
-  {"dump",     no_argument,       0, 'D'},
-  {"clean",    no_argument,       0, 'C'},
-  {"out",      required_argument, 0, 'o'},
-  {"device",   required_argument, 0, 'd'},
-  {"key",      required_argument, 0, 'k'},
-  {"key-file", required_argument, 0, 'f'},
-  {0,          0,                 0, 0  },
+  {"help",      no_argument,       0, 'h'},
+  {"inject",    required_argument, 0, 'J'},
+  {"transfer",  no_argument,       0, 'T'},
+  {"recharge",  required_argument, 0, 'R'},
+  {"dump",      no_argument,       0, 'D'},
+  {"clean",     no_argument,       0, 'C'},
+  {"out",       required_argument, 0, 'o'},
+  {"device",    required_argument, 0, 'd'},
+  {"key",       required_argument, 0, 'k'},
+  {"key-file",  required_argument, 0, 'f'},
+  {"n-sectors", required_argument, 0, 'n'},
+  {0,           0,                 0, 0  },
 };
 
 // static const char *optstring = "abc:d:012";
 
-static const char *optstring = ":hJ:TR:DCo:d:k:f:b";
+static const char *optstring = ":hJ:TR:DCo:d:k:f:n:b";
 
 /**
  * @brief Sets the global program options by parsing user arguments
@@ -41,6 +42,7 @@ void
 parse_user_flags(const int argc, char *const argv[], g_opts_t *const restrict G_opts)
 {
   opterr = 0; // don't use default getopt errors
+	char **strotl_err = NULL;
   int c;
   while ((c = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
     switch (c) {
@@ -88,16 +90,34 @@ parse_user_flags(const int argc, char *const argv[], g_opts_t *const restrict G_
       strncpy(
         G_opts->key_file_opts.input_loc, optarg, sizeof(char) * (strlen(optarg) + 1));
       break;
+    case 'n':
+			G_opts->number_of_sectors = strtol(optarg, strotl_err, 10);
+
+			if (G_opts->number_of_sectors <= 0) {
+				if (strotl_err) {
+					__ERROR("Invalid argument to number of sectors: " F_STR, optarg)
+					FREE_OPTS
+					exit(EXIT_FAILURE);
+				}
+				__ERROR("Number of sectors must be positive non zero", NULL)
+				FREE_OPTS
+				exit(EXIT_FAILURE);
+			} else if (G_opts->number_of_sectors > 6) {
+				__ERROR("Number of sectors must be at most " CYN "6" RESET, NULL)
+				FREE_OPTS
+				exit(EXIT_FAILURE);
+			}
+      break;
     case 'b':
       G_opts->key_file_opts.bin = true;
       break;
     case '?': // unknown option
-      __ERROR("invalid option " BOLD "`%s`" RESET, argv[optind - 1]);
+      __ERROR("invalid option " F_STR, argv[optind - 1]);
       FREE_OPTS
       exit(EXIT_FAILURE);
       break;
     case ':': // missing option argument
-      __ERROR("option " BOLD "`%s`" RESET " requires an argument", argv[optind - 1]);
+      __ERROR("option " F_STR " requires an argument", argv[optind - 1]);
       FREE_OPTS
       exit(EXIT_FAILURE);
       break;
@@ -153,7 +173,7 @@ keys_from_stdin(const char *restrict optarg, g_opts_t *const restrict G_opts)
 /**
  * @brief Read keys form file:
  *						- if `G_opts->key_file_opts.bin == true` the file is read as binary
- *						- if `G_opts->key_file_opts.bin == false` the file is read as a newline 
+ *						- if `G_opts->key_file_opts.bin == false` the file is read as a newline
  *separated ('\n') list of keys
  *
  * @param `G_opts`
@@ -184,8 +204,11 @@ keys_from_file(g_opts_t *const restrict G_opts)
 
     while (!feof(f)) {
       if ((btCount = fread(&buffer, 1, sizeof(MifareClassicKey), f)) != KEY_SIZE) {
-        __WARN("Invaild last key in file "YEL "%s" RESET ": "CYN"%ld"RESET" extra bytes", G_opts->key_file_opts.input_loc, btCount)
-				break;
+        __WARN("Invaild last key in file " YEL "%s" RESET ": " CYN "%ld" RESET
+               " extra bytes",
+               G_opts->key_file_opts.input_loc,
+               btCount)
+        break;
       }
       G_opts->n_keys++;
       G_opts->keys = (MifareClassicKey *) realloc(
@@ -200,15 +223,18 @@ keys_from_file(g_opts_t *const restrict G_opts)
     }
 
     while (c != EOF) {
-			if ((c = getc(f)) == EOF) {
-				break;
-			}
+      if ((c = getc(f)) == EOF) {
+        break;
+      }
 
       switch (c) {
       case EOF:
       case '\n':
         if (count < KEY_SIZE_CHAR) {
-          __ERROR("Invalid key size in file "YEL "%s" RESET ": key too short on line " CYN "%ld" RESET, G_opts->key_file_opts.input_loc, line_n)
+          __ERROR("Invalid key size in file " YEL "%s" RESET
+                  ": key too short on line " CYN "%ld" RESET,
+                  G_opts->key_file_opts.input_loc,
+                  line_n)
           FREE_OPTS
           exit(EXIT_FAILURE);
         }
@@ -221,7 +247,10 @@ keys_from_file(g_opts_t *const restrict G_opts)
         break;
       default:
         if (count > KEY_SIZE_CHAR) {
-          __ERROR("Invalid key size in file "YEL"%s"RESET": leading characters on line " CYN "%ld" RESET, G_opts->key_file_opts.input_loc, line_n)
+          __ERROR("Invalid key size in file " YEL "%s" RESET
+                  ": leading characters on line " CYN "%ld" RESET,
+                  G_opts->key_file_opts.input_loc,
+                  line_n)
           FREE_OPTS
           exit(EXIT_FAILURE);
         }

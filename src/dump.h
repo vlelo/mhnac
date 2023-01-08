@@ -5,13 +5,21 @@
 
 #include <nfc/nfc.h>
 
+#include "freefare.h"
 #include "main.h"
 
 //------------------------------------------------------------------//
 //                              Macros                              //
 //------------------------------------------------------------------//
 
-#define DUMP_SIZE sizeof(dump_t)
+#define UID_SIZE       4
+#define SECTOR_BLOCK_N 4
+
+#define DUMP_HEADER_SIZE                                                                 \
+  (sizeof(dump_t) - sizeof(MifareClassicBlock (*) [SECTOR_BLOCK_N]))
+#define DUMP_CONTENT_SIZE(dump)                                                          \
+  ((dump)->number_of_sectors * sizeof(MifareClassicBlock[SECTOR_BLOCK_N]))
+#define DUMP_SIZE(dump) (DUMP_HEADER_SIZE + DUMP_CONTENT_SIZE((dump)))
 
 #define FOPENR(f, file)                                                                  \
   {                                                                                      \
@@ -50,28 +58,37 @@
                   strerror(errno));                                                      \
     }                                                                                    \
   }
+#define FWRITE(what, size, f)                                                            \
+  {                                                                                      \
+    if (fwrite((what), (size), 1, (f)) != 1) {                                           \
+      fclose((f));                                                                       \
+      return -1;                                                                         \
+    }                                                                                    \
+  }
+#define FREAD(where, size, f)                                                            \
+  {                                                                                      \
+    if (fread((where), (size), 1, (f)) != 1) {                                           \
+      fclose((f));                                                                       \
+      return -1;                                                                         \
+    }                                                                                    \
+  }
 
 //------------------------------------------------------------------//
 //                            Constants                             //
 //------------------------------------------------------------------//
 
-static const char binid[] = "mhnac";
+static const char mhnac[] = "mhnac";
 
 //------------------------------------------------------------------//
 //                              Types                               //
 //------------------------------------------------------------------//
 
 typedef struct dump {
-  char id[6];
-  time_t tm;
-  uint8_t uid[4];
-  union {
-    struct {
-      MifareClassicBlock data[4];
-      MifareClassicBlock mistery[4];
-    } ordered;
-    MifareClassicBlock buffer[8];
-  } data;
+  char mhnac[sizeof(mhnac)];
+  time_t creation_time;
+  uint8_t uid[UID_SIZE];
+  uint8_t number_of_sectors;
+  MifareClassicBlock (*data)[SECTOR_BLOCK_N];
 } dump_t;
 
 //------------------------------------------------------------------//
