@@ -220,7 +220,7 @@ keys_from_file(g_opts_t *const restrict G_opts)
       exit(EXIT_FAILURE);
     }
 
-    while (c != EOF) {
+    while (!feof(f)) {
       if ((c = getc(f)) == EOF) {
         break;
       }
