@@ -187,6 +187,9 @@ dump_card(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
       mifare_classic_authenticate(
         G_state->tag, block_index, G_opts->keys[key_index], MFC_KEY_A);
       READ(G_state->tag, block_index, &dump.data.raw[block_index])
+			if (block_index == mifare_classic_sector_last_block(block_index)) {
+				memcpy(&dump.data.raw[block_index], &G_opts->keys[key_index], sizeof(MifareClassicKey));
+			}
     }
   }
 
