@@ -131,7 +131,7 @@ main(int argc, char *argv[])
   G_state.tag = G_state.tags[0];
   printf("Connecting to tag with UID: %s\n", freefare_get_tag_uid(G_state.tag));
 
-  if (freefare_get_tag_type(G_state.tag) != CLASSIC_1K ||
+  if (freefare_get_tag_type(G_state.tag) != CLASSIC_1K &&
       freefare_get_tag_type(G_state.tag) != CLASSIC_4K)
   {
     __PANIC(EXIT_FAILURE,
