@@ -16,21 +16,22 @@
 #define SECTOR_BLOCK_N 4
 #define MAX_BLOCK_N    64
 
-#define DUMP_HEADER_SIZE(dump) \
-(sizeof(dump->mhnac) + sizeof(dump->creation_time) + sizeof(dump->uid) + sizeof(dump->number_of_sectors))
+#define DUMP_HEADER_SIZE(dump)                                                           \
+  (sizeof(dump->mhnac) + sizeof(dump->creation_time) + sizeof(dump->uid) +               \
+   sizeof(dump->number_of_sectors))
 #define DUMP_CONTENT_SIZE(dump)                                                          \
   ((dump)->number_of_sectors * sizeof(MifareClassicBlock[SECTOR_BLOCK_N]))
 #define DUMP_SIZE(dump) (DUMP_HEADER_SIZE((dump)) + DUMP_CONTENT_SIZE((dump)))
 
 #define FOPENR(f, file)                                                                  \
   {                                                                                      \
-    if ((f = fopen((file), "rx")) == NULL) {                                             \
+    if ((f = fopen((file), "rb")) == NULL) {                                             \
       return -1;                                                                         \
     }                                                                                    \
   }
 #define FOPENW(f, file)                                                                  \
   {                                                                                      \
-    if ((f = fopen((file), "wx")) == NULL) {                                             \
+    if ((f = fopen((file), "wb")) == NULL) {                                             \
       return -1;                                                                         \
     }                                                                                    \
   }

@@ -196,7 +196,7 @@ keys_from_file(g_opts_t *const restrict G_opts)
   }
 
   if (G_opts->key_file_opts.bin) {
-    if ((f = fopen(G_opts->key_file_opts.input_loc, "rx")) == NULL) {
+    if ((f = fopen(G_opts->key_file_opts.input_loc, "rb")) == NULL) {
       FREE_OPTS_ptr __ERROR("%s", strerror(errno));
       exit(EXIT_FAILURE);
     }
