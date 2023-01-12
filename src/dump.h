@@ -16,10 +16,11 @@
 #define SECTOR_BLOCK_N 4
 #define MAX_BLOCK_N    64
 
-#define DUMP_HEADER_SIZE (sizeof(dump_t) - sizeof(MifareClassicBlock(*)[SECTOR_BLOCK_N]))
+#define DUMP_HEADER_SIZE(dump) \
+(sizeof(dump->mhnac) + sizeof(dump->creation_time) + sizeof(dump->uid) + sizeof(dump->number_of_sectors))
 #define DUMP_CONTENT_SIZE(dump)                                                          \
   ((dump)->number_of_sectors * sizeof(MifareClassicBlock[SECTOR_BLOCK_N]))
-#define DUMP_SIZE(dump) (DUMP_HEADER_SIZE + DUMP_CONTENT_SIZE((dump)))
+#define DUMP_SIZE(dump) (DUMP_HEADER_SIZE((dump)) + DUMP_CONTENT_SIZE((dump)))
 
 #define FOPENR(f, file)                                                                  \
   {                                                                                      \
@@ -88,7 +89,7 @@ typedef struct dump {
   time_t creation_time;
   uint8_t uid[UID_SIZE];
   uint8_t number_of_sectors;
-  struct {
+  union {
     MifareClassicBlock (*formatted)[SECTOR_BLOCK_N];
     MifareClassicBlock *raw;
   } data;

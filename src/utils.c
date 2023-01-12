@@ -75,7 +75,6 @@ inject_dump(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
   size_t block_index_card, block_index_dump;
   size_t n_key_sector;
 
-  init_dump(&dump, NULL, 0);
   READ_DUMP(&dump, G_opts->input_loc);
 
   for (register long i = 0; i < dump.number_of_sectors; i++) {
@@ -244,7 +243,6 @@ void
 print_dump(g_state_t *const restrict G_state, g_opts_t *const restrict G_opts)
 {
   dump_t dump;
-  init_dump(&dump, NULL, 0);
   char buf[BLOCK_SIZE_CHAR + 1];
 
   READ_DUMP(&dump, G_opts->input_loc);

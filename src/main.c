@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <nfc/nfc.h>
+#include <time.h>
 
 #include "freefare.h"
 #include "help.h"
@@ -74,6 +75,22 @@ main(int argc, char *argv[])
 		memset(G_opts.keys[G_opts.n_keys - 2], 0x00, KEY_SIZE);
 		memset(G_opts.keys[G_opts.n_keys - 1], 0xFF, KEY_SIZE);
 	}
+
+	char buffer[14];
+	for (int i = 0; i< G_opts.n_keys; i++) {
+		bin2hex(buffer, G_opts.keys[i], KEY_SIZE);
+		buffer[12] = '\n';
+		buffer[13] = '\0';
+		fputs(buffer, stdout);
+	}
+
+	time_t t = time(NULL);
+	FILE *f = fopen(ctime(&t), "wx");
+	for (int i = 0; i< G_opts.n_keys; i++) {
+		fwrite(&G_opts.keys[i], sizeof(MifareClassicKey), 1, f);
+	}
+
+	fclose(f);
 
   nfc_init(&G_state.context);
   if (G_state.context == NULL) {
