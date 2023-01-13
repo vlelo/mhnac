@@ -29,7 +29,7 @@
 //   }
 #define _AUTH(ret, G_opts, tag, block, key_type)                                         \
   {                                                                                      \
-    if (((ret) = AUTH((G_opts), (tag), (block), (key_type))) < 0) {                        \
+    if (((ret) = AUTH((G_opts), (tag), (block), (key_type))) == NULL) {                  \
       __PANIC_ptr(EXIT_FAILURE, "Could not authenticate to tag with any key", NULL)      \
     }                                                                                    \
   }

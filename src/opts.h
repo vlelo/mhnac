@@ -47,16 +47,21 @@
 //                              Types                               //
 //------------------------------------------------------------------//
 
+typedef struct key_node {
+  MifareClassicKey key;
+  struct key_node *next;
+} key_node_t;
+
 typedef struct g_opts {
   char *desired_device;
   char *output_loc;
   char *input_loc;
-  MifareClassicKey *keys;
+  key_node_t *keys;
+  size_t n_keys;
   struct {
     char *input_loc;
     bool bin;
   } key_file_opts;
-  size_t n_keys;
   long int number_of_sectors;
   void (*fun)(g_state_t *, struct g_opts *);
 } g_opts_t;
@@ -73,5 +78,8 @@ keys_from_stdin(const char *optarg, g_opts_t *const G_opts);
 
 void
 keys_from_file(g_opts_t *const G_opts);
+
+key_node_t *
+add_key_node(key_node_t **node, MifareClassicKey key);
 
 #endif // !_OTPS_H_

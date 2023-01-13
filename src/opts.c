@@ -140,10 +140,8 @@ void
 keys_from_stdin(const char *restrict optarg, g_opts_t *const restrict G_opts)
 {
   int count = 0;
-  size_t n_keys = 0;
   char c = 1;
-
-  G_opts->keys = (MifareClassicKey *) malloc(1);
+  MifareClassicKey keyBuffer;
 
   while (c != '\0') {
     c = *(optarg + count);
@@ -155,10 +153,9 @@ keys_from_stdin(const char *restrict optarg, g_opts_t *const restrict G_opts)
         __ERROR("Invalid key size: " CYN "%.*s" RESET, count, optarg)
         FREE_OPTS_ptr exit(EXIT_FAILURE);
       }
-      n_keys++;
-      G_opts->keys =
-        (MifareClassicKey *) realloc(G_opts->keys, (sizeof(MifareClassicKey) * n_keys));
-      hex2bin(G_opts->keys[n_keys - 1], optarg, KEY_SIZE);
+      G_opts->n_keys++;
+      hex2bin(keyBuffer, optarg, KEY_SIZE);
+      add_key_node(&G_opts->keys, keyBuffer);
       optarg += KEY_SIZE_CHAR + 1; // +1 is :
       count = 0;
       break;
@@ -167,7 +164,6 @@ keys_from_stdin(const char *restrict optarg, g_opts_t *const restrict G_opts)
       break;
     }
   }
-  G_opts->n_keys = n_keys;
 }
 
 /**
@@ -187,13 +183,10 @@ keys_from_file(g_opts_t *const restrict G_opts)
   size_t btCount;
 
   char strBuffer[KEY_SIZE_CHAR];
+  MifareClassicKey keyBuffer;
   char c = 1;
   int count = 0;
   size_t line_n = 0;
-
-  if (G_opts->keys == NULL) {
-    G_opts->keys = (MifareClassicKey *) malloc(1);
-  }
 
   if (G_opts->key_file_opts.bin) {
     if ((f = fopen(G_opts->key_file_opts.input_loc, "rb")) == NULL) {
@@ -210,9 +203,7 @@ keys_from_file(g_opts_t *const restrict G_opts)
         break;
       }
       G_opts->n_keys++;
-      G_opts->keys = (MifareClassicKey *) realloc(
-        G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
-      memcpy(G_opts->keys[G_opts->n_keys - 1], buffer, KEY_SIZE);
+      add_key_node(&G_opts->keys, buffer);
     }
   } else {
     if ((f = fopen(G_opts->key_file_opts.input_loc, "r")) == NULL) {
@@ -236,9 +227,8 @@ keys_from_file(g_opts_t *const restrict G_opts)
           FREE_OPTS_ptr exit(EXIT_FAILURE);
         }
         G_opts->n_keys++;
-        G_opts->keys = (MifareClassicKey *) realloc(
-          G_opts->keys, (sizeof(MifareClassicKey) * G_opts->n_keys));
-        hex2bin(G_opts->keys[G_opts->n_keys - 1], strBuffer, KEY_SIZE);
+        hex2bin(keyBuffer, strBuffer, KEY_SIZE);
+        add_key_node(&G_opts->keys, keyBuffer);
         count = 0;
         line_n++;
         break;
@@ -258,4 +248,34 @@ keys_from_file(g_opts_t *const restrict G_opts)
   }
 
   fclose(f);
+}
+
+/**
+ * @brief Add node to key_list or create first node
+ *
+ * @param node Adress of pointer to node
+ * @param key Key to add
+ * @return Pointer created
+ */
+key_node_t *
+add_key_node(key_node_t **node, MifareClassicKey key)
+{
+  key_node_t *p = *node;
+
+  if (p == NULL) {
+    p = malloc(sizeof(key_node_t));
+    memcpy(p->key, key, sizeof(MifareClassicKey));
+    p->next = NULL;
+    *node = p;
+    return p;
+  }
+
+  while (p->next != NULL) {
+    p = p->next;
+  }
+  p->next = malloc(sizeof(key_node_t));
+  p = p->next;
+  memcpy(p->key, key, sizeof(MifareClassicKey));
+  p->next = NULL;
+  return p;
 }

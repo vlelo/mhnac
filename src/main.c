@@ -48,49 +48,37 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-	{ /* manage user input */
-		parse_user_flags(argc, argv, &G_opts);
-		if (G_opts.fun == print_dump) {
-			print_dump(&G_state, &G_opts);
-			FREE_OPTS
-			exit(EXIT_SUCCESS);
-		}
+  { /* manage user input */
+    parse_user_flags(argc, argv, &G_opts);
+    if (G_opts.fun == print_dump) {
+      print_dump(&G_state, &G_opts);
+      FREE_OPTS
+      exit(EXIT_SUCCESS);
+    }
 
-		if (G_opts.number_of_sectors != 0) {
-			if (G_opts.fun == inject_dump || G_opts.fun == recharge_card || G_opts.fun == print_dump) {
-				__WARN("Flag --n-sectors set with an incompatible command: " F_STR, cmd(G_opts.fun));
-			}
-		} else {
-			G_opts.number_of_sectors = 4;
-		}
+    if (G_opts.number_of_sectors != 0) {
+      if (G_opts.fun == inject_dump || G_opts.fun == recharge_card ||
+          G_opts.fun == print_dump)
+      {
+        __WARN("Flag --n-sectors set with an incompatible command: " F_STR,
+               cmd(G_opts.fun));
+      }
+    } else {
+      G_opts.number_of_sectors = 4;
+    }
 
-		if (G_opts.key_file_opts.input_loc) {
-			keys_from_file(&G_opts);
-		} else if (G_opts.key_file_opts.bin) {
-			__WARN("Flag -b set wihtout --key-file", NULL);
-		}
-		G_opts.n_keys += 2;
-		G_opts.keys =
-			(MifareClassicKey *) realloc(G_opts.keys, (sizeof(MifareClassicKey) * G_opts.n_keys));
-		memset(G_opts.keys[G_opts.n_keys - 2], 0x00, KEY_SIZE);
-		memset(G_opts.keys[G_opts.n_keys - 1], 0xFF, KEY_SIZE);
-	}
-
-	char buffer[14];
-	for (int i = 0; i< G_opts.n_keys; i++) {
-		bin2hex(buffer, G_opts.keys[i], KEY_SIZE);
-		buffer[12] = '\n';
-		buffer[13] = '\0';
-		fputs(buffer, stdout);
-	}
-
-	time_t t = time(NULL);
-	FILE *f = fopen(ctime(&t), "wx");
-	for (int i = 0; i< G_opts.n_keys; i++) {
-		fwrite(&G_opts.keys[i], sizeof(MifareClassicKey), 1, f);
-	}
-
-	fclose(f);
+    if (G_opts.key_file_opts.input_loc) {
+      keys_from_file(&G_opts);
+    } else if (G_opts.key_file_opts.bin) {
+      __WARN("Flag -b set wihtout --key-file", NULL);
+    }
+    G_opts.n_keys += 2;
+    MifareClassicBlock buffer;
+    memset(buffer, 0x00, KEY_SIZE);
+    add_key_node(&G_opts.keys, buffer);
+    memset(buffer, 0xFF, KEY_SIZE);
+    add_key_node(&G_opts.keys, buffer);
+  }
 
   nfc_init(&G_state.context);
   if (G_state.context == NULL) {
@@ -139,15 +127,7 @@ main(int argc, char *argv[])
             freefare_get_tag_friendly_name(G_state.tag));
   }
 
-  if (mifare_classic_connect(G_state.tag) < 0) {
-    __PANIC_FF(EXIT_FAILURE, G_state.tag);
-  }
-
   G_opts.fun(&G_state, &G_opts);
-
-  if (mifare_classic_disconnect(G_state.tag) < 0) {
-    __PANIC_FF(EXIT_FAILURE, G_state.tag);
-  }
 
   /* free options object */
   FREE_OPTS
@@ -204,23 +184,23 @@ sig(const int signum)
 __inline__ char *
 cmd(void (*fun)(g_state_t *G_state, g_opts_t *G_opts))
 {
-	if (fun == inject_dump) {
-		return "inject";
-	}
-	if (fun == transfer_credit) {
-		return "transfer";
-	}
-	if (fun == recharge_card) {
-		return "recharge";
-	}
-	if (fun == dump_card) {
-		return "dump";
-	}
-	if (fun == clean_card) {
-		return "clean";
-	}
-	if (fun == print_dump) {
-		return "print";
-	}
+  if (fun == inject_dump) {
+    return "inject";
+  }
+  if (fun == transfer_credit) {
+    return "transfer";
+  }
+  if (fun == recharge_card) {
+    return "recharge";
+  }
+  if (fun == dump_card) {
+    return "dump";
+  }
+  if (fun == clean_card) {
+    return "clean";
+  }
+  if (fun == print_dump) {
+    return "print";
+  }
   return "UNKNOWN";
 }

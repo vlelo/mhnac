@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "dump.h"
-#include "util.h"
 #include "utils.h"
 
 /**
@@ -54,10 +53,10 @@ read_dump(dump_t *const restrict dump, const char *const restrict fname)
 {
   FILE *f;
 
-	char mhnac[sizeof(dump->mhnac)];
-	time_t creation_time;
-	uint8_t uid[UID_SIZE];
-	uint8_t number_of_sectors;
+  char mhnac[sizeof(dump->mhnac)];
+  time_t creation_time;
+  uint8_t uid[UID_SIZE];
+  uint8_t number_of_sectors;
 
   FOPENR(f, fname);
 
@@ -69,10 +68,10 @@ read_dump(dump_t *const restrict dump, const char *const restrict fname)
 
   init_dump(dump, NULL, number_of_sectors);
 
-	memcpy(dump->mhnac, mhnac, sizeof(dump->mhnac));
-	memcpy(&dump->creation_time, &creation_time, sizeof(dump->creation_time));
-	memcpy(dump->uid, uid, sizeof(dump->uid));
-	memcpy(&dump->number_of_sectors, &number_of_sectors, sizeof(dump->number_of_sectors));
+  memcpy(dump->mhnac, mhnac, sizeof(dump->mhnac));
+  memcpy(&dump->creation_time, &creation_time, sizeof(dump->creation_time));
+  memcpy(dump->uid, uid, sizeof(dump->uid));
+  memcpy(&dump->number_of_sectors, &number_of_sectors, sizeof(dump->number_of_sectors));
 
   if (memcmp(dump->mhnac, mhnac, sizeof(mhnac))) {
     return -2;
